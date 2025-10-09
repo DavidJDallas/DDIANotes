@@ -40,6 +40,8 @@ The general conceptual idea is: save up a bunch of records in memory, and then w
 
 Optimised for write-operations. Actually sort-of inverts the classical trade off that we see in indexes: faster reads for more write overheads. This maximises write-speed, at the expense of read-speed.
 
+Individual writes are as fast or faster than hash indexes. Reads have slightly more overhead, but likely to have similar performances.
+
 - uses a bloom filter, a way to make hash collisions far less likely (^7 power less likely, I think).
 
 Used by databases like Cassandra
@@ -47,3 +49,17 @@ Used by databases like Cassandra
 <h3> B-Trees </h3>
 
 Most traditional relational databases (row-oriented) use some version of this.
+
+B-trees don't create duplicate entries, but instead allow deletes and updates in place. 
+
+Both reads and writes are log time. 
+
+They're guaranteed to stay balanced. 
+
+Writing in place and page splits are dangerous operations to be interrupted by a server crash. Most therefore use a write-ahead log on disk. Modifications are written here prior to updating the B-tree. 
+
+<h3> Comparing B-Trees and LSM Trees </h3>
+
+B-trees are more well-established. But LSM-trees are typically faster for writes. Conventional wisdom is that B-trees are faster for reads, but this may depend on workload. 
+
+<h3> Secondary Indexes </h3>

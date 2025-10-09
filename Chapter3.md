@@ -24,11 +24,23 @@ Klepmann discusses several types of data structures that power indexes across di
 
 <h3> Hash Indexes </h3>
 
-Very quick, very simple. Not efficient for queries using ranges of values, but amazing for exact key lookups (O(1) for exact key lookups)
+Pros
+- Very quick, very simple. 
+- Amazing for exact key lookups (O(1)).
+
+Cons
+- Not efficient for queries using ranges of values.
+- Hash map needs to be stored in memory (NOT on disk)
 
 <h3> SSTables and LSM-Trees </h3>
 
+Building on from hash indexes - this solves the problem in hash indexes of the inefficiency for queries over ranges of values. Each file segment is now in sorted order. 
+
+The general conceptual idea is: save up a bunch of records in memory, and then write to a file segment in sorted order. In batches. 
+
 Optimised for write-operations. Actually sort-of inverts the classical trade off that we see in indexes: faster reads for more write overheads. This maximises write-speed, at the expense of read-speed.
+
+- uses a bloom filter, a way to make hash collisions far less likely (^7 power less likely, I think).
 
 Used by databases like Cassandra
 

@@ -34,7 +34,7 @@ Cons
 
 <h3> SSTables and LSM-Trees </h3>
 
-Building on from hash indexes - this solves the problem in hash indexes of the inefficiency for queries over ranges of values. Each file segment is now in sorted order. 
+Building on from hash indexes - this solves the problem in hash indexes of the inefficiency for queries over ranges of values. Each file segment is now in sorted order, with a sort done on the key. This first part is called a SSTable (sorted-string table).
 
 The general conceptual idea is: save up a bunch of records in memory, and then write to a file segment in sorted order. In batches. 
 
@@ -60,6 +60,7 @@ Writing in place and page splits are dangerous operations to be interrupted by a
 
 <h3> Comparing B-Trees and LSM Trees </h3>
 
-B-trees are more well-established. But LSM-trees are typically faster for writes. Conventional wisdom is that B-trees are faster for reads, but this may depend on workload. 
+B-trees are more well-established. But LSM-trees are typically faster for writes. Conventional wisdom is that B-trees are faster for reads, but this may depend on workload - 'benchmarks are often inconclusive and sensitive to details of the workload.' (p83).
 
 <h3> Secondary Indexes </h3>
+

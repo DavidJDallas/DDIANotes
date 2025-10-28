@@ -31,3 +31,10 @@ You can always end up with an edge case in these examples where one particular k
 
 <h2> Rebalancing </h2>
 
+Things will change in the db that can lead to data and requests needing to move from one node to another. Regardless of partioning scheme, rebalancing is usually expected to meet some minimum requirements:
+
+- After rebalancing, the load should be shared fairly between the nodes in the cluster.
+- While rebalancing is happening, the database should continue accepting reads and writes
+- No more data than necessary should be moved between nodes to make rebalancing fast and to minimise the network and disk I/O load. 
+
+<h4> Strategies to Rebalance </h4>

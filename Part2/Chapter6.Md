@@ -4,6 +4,9 @@ When the data you're dealing with is too big to fit on one node, you'll need to 
 
 The main reason to want to partition data is scalability. Large datasets can be distributed across many disks, and the query load distributed across many processors. 
 
+Sharding/partioning is primarily for scaling write capacity and total memory/storage capacity.
+Replication is primarily for increasing read thoroughput and ensuring high availability/fault tolerance. 
+
 Structure of the chapter:
 
 - different approaches to partition large datasets and observe how the indexing of data interacts with partioning.

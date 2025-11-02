@@ -74,6 +74,8 @@ It may seem that everything that needs to be done here for ACID compliance has b
 
 Snapshot isolation: the transaction sees a consistent, static, snapshot of the database as it existed at the moment the transaction began. 
 
+MVCC is the underlying mechanism that makes snapshot isolation possible and efficient.
+
 <h4> Serialisability </h4>
 
 This is the strongest guarantee, but it naturally comes with trade offs (usually speed).
@@ -102,6 +104,14 @@ Pessimistic concurrency.
 <h5> Serialisable snapshot-isolation</h5>
 
 'serializable snapshot isolation is an optimistic concurrency control technique. Optimistic in this context means that instead of blocking if something potentially dangerous happens, transactions continue anyway, in the hope that everything will turn out all right' (p261)
+
+Obviously with snapshot isolation, the assumption made at the start of the transaction may not be true - things may have changed. 
+
+There are two cases to consider when we ask the question: how does the database know if a query result might have changed?
+
+(1) Detecting reads of a stale MVCC object version (uncommitted write occured before the read)
+(2) Detecing writes that affect prior reads (the write occurs after the read)
+
 
 
 Isolation levels vs concurrency control

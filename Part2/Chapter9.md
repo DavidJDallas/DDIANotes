@@ -1,4 +1,4 @@
-<h1> Consistency and Consensus </h1>
+# Consistency and Consensus 
 
 321: 'The best way of building fault-tolerant systems is to find some general-purpose abstractions with useful guarantees, implement them once, and then let applications rely on those guarantees'. 
 
@@ -10,7 +10,7 @@ The chapter covers three main areas:
 (2) Examine issues of ordering events in a distributed system (ordering guarantees).
 (3) Explore how to atomically commit a distributed transaction, which leads on to the consensus problem.
 
-<h2> Linearisability </h2>
+## Linearisability 
 
 Aka atomic consistency, strong consistency, immediate consistency, external consistency. The basic idea of linearisability is to make a system <i>appear</i> as if there were only one copy of the data, and all operations on it are atomic. 
 In a linearisable system, as soon as one client successfully completes a write, all clients reading from the database must be able to see he value just written. 
@@ -21,11 +21,11 @@ this is quite different to serialisability:
 
 Both combined are referred to as strict serialisability, or strong one-copy serialisability. Some db do do this, such as Google Spanner, FoundationDb. But Cockroach does acheive SS for transactions that touch overlapping key-ranges. 
 
-<h3> Implementing linearisability </h3>
+### Implementing linearisability 
 
 The most common approach to making a system fault-tolerant is to use replication. But out of these, the only way to guarantee linearisability is through consensus algorithsm. 
 
-<h3> Costs of linearisability </h3>
+### Costs of linearisability
 
 Performance (latency and throughput), and hardware complexity sometimes. Always slower for writes. 
 

@@ -1,4 +1,4 @@
-<h1> Distributed Data</h1>
+# Distributed Data
 
 Part 1 essentially discusses concepts where we assume that we only have 1 machine involved. This part now assumes that we have multiple machines that are involved in storage and retrieval. 
 
@@ -25,7 +25,7 @@ Horizontal scaling is also called shared-nothing architecture.
 
 'While a distributed shared-nothing architecture has many advantages, it usually also incurs additional complexity for applications and sometimes limits the expressiveness of the data models you can use. In some cases, a single-threaded programme can perform significanlty beter than a cluster with over 100 CPU cores.'
 
-<h2> Replication vs Partioning </h2>
+## Replication vs Partioning 
 
 The two common ways to distribute across multiple nodes:
 

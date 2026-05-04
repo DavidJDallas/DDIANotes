@@ -1,4 +1,4 @@
-<h1> Replication </h1>
+# Replication 
 
 To do replication, your dataset needs to be small enough so that each machine can hold a copy of the entire dataset. If not, then you need to do sharding/partioning. Thus, replication has more constraints than sharding and has specific conditions under which you can do it.
 
@@ -6,7 +6,7 @@ If the data that you're replicating is read-only, then replication is easy. You 
 
 Discussion of popular algorithms for replicating changes between nodes - single leader, multi leader, leaderless. Almost all distributed databases use one of these 3 approaches. 
 
-<h2>Leaders and Followers</h2>
+## Leaders and Followers
 
 Each node that stores a copy of the db is called a replica. When we have multiple, we have to ask the question: how do we nesure that all the data ends up on all the replicas?
 
@@ -17,5 +17,4 @@ Whenever reader writes new data, also sends the data changes to all followers. E
 
 When a client wants to read from the db, it can query either leader of followers. However, writes are only accepted on the leader. 
 
-<h3> Synchronous vs Async replcation </h3>
-
+### Synchronous vs Async replcation

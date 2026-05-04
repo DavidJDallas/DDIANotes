@@ -1,6 +1,6 @@
-<h1> Storage and Retrieval </h1>
+# Storage and Retrieval 
 
-<h2> Overview and Introduction </h2>
+## Overview and Introduction
 
 This is essentially a chapter on storage engines, and on what they do, how they work under the hood, etc. We can split up storage engines into log-structured storage engines, and page-structured storage engines. 
 
@@ -16,13 +16,13 @@ But we should be careful here. For many examples, the index is the metadata on t
 
 The chapter progresses not historically, but as a development of complexity in terms of the data structures and algorithms that we introduce to impose order onto the database; we move from more simple (hash indexes) into more complex. 
 
-<h2> Indexes Under the Hood </h2>
+## Indexes Under the Hood 
 
 Indexes will work very differently depending on the database, or storage mechanism, we choose. (I use the term storage mechanism to allow for discussion of indexing in storage mechanisms like caching systems (e.g. Redis) which are certainly not databases but would use indexing and are valuable to discuss.)
 
 Klepmann discusses several types of data structures that power indexes across different databases.
 
-<h3> Hash Indexes </h3>
+### Hash Indexes
 
 Pros
 - Very quick, very simple. 
@@ -32,7 +32,7 @@ Cons
 - Not efficient for queries using ranges of values.
 - Hash map needs to be stored in memory (NOT on disk)
 
-<h3> SSTables and LSM-Trees </h3>
+### SSTables and LSM-Trees 
 
 Building on from hash indexes - this solves the problem in hash indexes of the inefficiency for queries over ranges of values. Each file segment is now in sorted order, with a sort done on the key. This first part is called a SSTable (sorted-string table).
 
@@ -46,7 +46,7 @@ Individual writes are as fast or faster than hash indexes. Reads have slightly m
 
 Used by databases like Cassandra
 
-<h3> B-Trees </h3>
+### B-Trees 
 
 Most traditional relational databases (row-oriented) use some version of this.
 
@@ -58,9 +58,9 @@ They're guaranteed to stay balanced.
 
 Writing in place and page splits are dangerous operations to be interrupted by a server crash. Most therefore use a write-ahead log on disk. Modifications are written here prior to updating the B-tree. 
 
-<h3> Comparing B-Trees and LSM Trees </h3>
+### Comparing B-Trees and LSM Trees 
 
 B-trees are more well-established. But LSM-trees are typically faster for writes. Conventional wisdom is that B-trees are faster for reads, but this may depend on workload - 'benchmarks are often inconclusive and sensitive to details of the workload.' (p83).
 
-<h3> Secondary Indexes </h3>
+### Secondary Indexes 
 

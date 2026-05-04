@@ -1,4 +1,4 @@
-<h1> Notes on Designing Data-Intensive Applications </h1>
+# Notes on Designing Data-Intensive Applications
 
 DDIA has become arguably the go-to book for solid backend engineering, and how to do it. So many articles online, so many videos on YouTube, are simply explicating chapters or sections of it (either with acknowledgements or without acknowledgements). 
 

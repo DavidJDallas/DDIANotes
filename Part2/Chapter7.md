@@ -1,4 +1,4 @@
-<h1> Transactions </h1>
+# Transactions
 
 In software engineering, things can and do wrong. Sometimes catastrophically. Transactions make things safer, and whilst they don't prevent failures, they prevent partial failures or partial success. 
 
@@ -6,7 +6,7 @@ In software engineering, things can and do wrong. Sometimes catastrophically. Tr
 
 Transactions were the main casualty of the NoSql movement into default replication and partioning. Many NoSQL databases abandonded transactions, or redefined it to describe a much weaker set of guarantees. 
 
-<h2>The Meaning of ACID </h2>
+## The Meaning of ACID
 
 - Atomicity
 - Consistency
@@ -14,19 +14,19 @@ Transactions were the main casualty of the NoSql movement into default replicati
 - Durability
 
 
-<h4> Atomicity </h4>
+### Atomicity
 
 In short: guarantee of all-or-nothing. A transaction can crash halfway through and we can be confident that nothing has been committed. Similarly, if a transaction completes we know everything inside it has been committed.
 
-<h4> Consistency </h4>
+### Consistency 
 
 Points out that this is heavily to do with the application code, and that Hellerstein has remarked that the C in ACID was put in just to make the acronym work. Consistency in short is put good data in, get good data saved. The db will be in a good state based on the input of the transaction. 
 
-<h4> Isolation </h4>
+### Isolation 
 
 Concurrently executing transactions are isolated from each other. They are many different degrees of isolation: the strongest is serializable isolation (transactions will run as if running sequentially), and weakness goes quite far down to not much isolation guarantees at all. 
 
-<h4> Durability </h4>
+#### Durability 
 
 Once a transaction has been committed, any data it has written will not be forgotten. 
 
@@ -34,7 +34,7 @@ Once a transaction has been committed, any data it has written will not be forgo
 
 There's most to discuss around Atomicity and Isolation. Consistency and Durability are weaker and more straightforward. 
 
-<h2> Single object and multi-object operations </h2>
+## Single object and multi-object operations
 
 Storage engines almost universally aim to apply atomicity and isolation on the level of a single object. So, most single object submits will have some sort of ACID guarantee. But:
 
@@ -44,7 +44,7 @@ Storage engines almost universally aim to apply atomicity and isolation on the l
 
 There are edge cases where the A in ACId will not be true. E.g. transaction is committed, but network fails while server tries to acknolwedge submission to the client. 
 
-<h2> Weak Isolation Levels </h2>
+## Weak Isolation Levels 
 
 Concurrency bugs (race conditions) don't arise in simultaneous reads. They only arise when writes are involved, whether that be one trying to write at the same time as another tries to read, or one trying to write at the same time as the other trying to write. 
 
@@ -60,9 +60,9 @@ Note: we can see avoiding use of mutable states in your appliation code as a way
 
 Serialisable isolation has a performance cost that many databases simply don't want to pay the price for. Weaker isolation levels are not just a theoretical problem - major problems ahve arisen from it. This is further interesting because many databses are technically ACID - which consulstants will advise to use for fintech, and areas where this sort of safety is paramount - and yet an ACID database, if using weaker isolation, can still absolutely allow serious bugs like this. 
 
-<h3> Different types of Weak Isolation </h3>
+### Different types of Weak Isolation
 
-<h4> Read Committed </h4>
+#### Read Committed 
 
 The two guarantees from this are <b>No dirty reads </b> and <b> No Dirty Writes. </b>
 
@@ -70,17 +70,17 @@ I.e., when reading from the database, you will only see data that has been commi
 
 It may seem that everything that needs to be done here for ACID compliance has been done. But there are many ways you can still have concurrency bugs. 
 
-<h4> Snapshot Isolation and Repeatable Read </h4>
+#### Snapshot Isolation and Repeatable Read
 
 Snapshot isolation: the transaction sees a consistent, static, snapshot of the database as it existed at the moment the transaction began. 
 
 MVCC is the underlying mechanism that makes snapshot isolation possible and efficient.
 
-<h4> Serialisability </h4>
+#### Serialisability
 
 This is the strongest guarantee, but it naturally comes with trade offs (usually speed).
 
-<h5> Actual Serial Execution </h4>
+#### Actual Serial Execution 
 
 Here, we literally sequentially run transactions. Only really introduced in 2007, when RAM became cheap enough for entire dataset to be kept in memory, and database designers realised that OLTP transactions are usually short and only make a small number fo reads and writes. 
 
@@ -93,7 +93,7 @@ Certain requirements for this type of execution:
 - Write thoroughput must be low enough to be handle on a single CPU core.
 - Cross-partitioned transactions possible, but hard limit to which they can be used.
 
-<h5> Two Phase Locking: 2PL </h5>
+##### Two Phase Locking: 2PL
 
 Dominant way of ding it for 30 years. 
 
@@ -101,7 +101,7 @@ In 2PL, 'writers don't just block writers; they also block readers and vice vers
 
 Pessimistic concurrency.
 
-<h5> Serialisable snapshot-isolation</h5>
+#### Serialisable snapshot-isolation
 
 'serializable snapshot isolation is an optimistic concurrency control technique. Optimistic in this context means that instead of blocking if something potentially dangerous happens, transactions continue anyway, in the hope that everything will turn out all right' (p261)
 

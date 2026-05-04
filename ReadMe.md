@@ -7,3 +7,7 @@ Over the last year or so, I've read isolated chapters of it, and picked it up wh
 So, this repo is my notes and summaries of chapters of the book that I have chosen to look at in-depth.
 
 I also fully intend to use this space to discuss any concepts or ideas that are presented in DDIA that I find interesting or worth mentioning. Potentially expect rabbit-hole dives of certain threads discussed in DDIA.
+
+## 2nd Edition
+
+The 2nd edition has recently come out. I've started to make notes under that also under the relevant folder.

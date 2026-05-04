@@ -62,5 +62,4 @@ Writing in place and page splits are dangerous operations to be interrupted by a
 
 B-trees are more well-established. But LSM-trees are typically faster for writes. Conventional wisdom is that B-trees are faster for reads, but this may depend on workload - 'benchmarks are often inconclusive and sensitive to details of the workload.' (p83).
 
-### Secondary Indexes 
-
+### Secondary Indexes

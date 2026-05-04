@@ -13,26 +13,23 @@ Transactions were the main casualty of the NoSql movement into default replicati
 - Isolation
 - Durability
 
-
 ### Atomicity
 
 In short: guarantee of all-or-nothing. A transaction can crash halfway through and we can be confident that nothing has been committed. Similarly, if a transaction completes we know everything inside it has been committed.
 
-### Consistency 
+### Consistency
 
-Points out that this is heavily to do with the application code, and that Hellerstein has remarked that the C in ACID was put in just to make the acronym work. Consistency in short is put good data in, get good data saved. The db will be in a good state based on the input of the transaction. 
+Points out that this is heavily to do with the application code, and that Hellerstein has remarked that the C in ACID was put in just to make the acronym work. Consistency in short is put good data in, get good data saved. The db will be in a good state based on the input of the transaction.
 
-### Isolation 
+### Isolation
 
-Concurrently executing transactions are isolated from each other. They are many different degrees of isolation: the strongest is serializable isolation (transactions will run as if running sequentially), and weakness goes quite far down to not much isolation guarantees at all. 
+Concurrently executing transactions are isolated from each other. They are many different degrees of isolation: the strongest is serializable isolation (transactions will run as if running sequentially), and weakness goes quite far down to not much isolation guarantees at all.
 
-#### Durability 
+#### Durability
 
-Once a transaction has been committed, any data it has written will not be forgotten. 
+Once a transaction has been committed, any data it has written will not be forgotten.
 
-
-
-There's most to discuss around Atomicity and Isolation. Consistency and Durability are weaker and more straightforward. 
+There's most to discuss around Atomicity and Isolation. Consistency and Durability are weaker and more straightforward.
 
 ## Single object and multi-object operations
 
@@ -42,7 +39,7 @@ Storage engines almost universally aim to apply atomicity and isolation on the l
 
 'Many distributed datastores have abandoned multi-object transactions because they are difficult to implement across partitions, and they can get in the way in some scenarios where very high availability or performance is required'. (p231)
 
-There are edge cases where the A in ACId will not be true. E.g. transaction is committed, but network fails while server tries to acknolwedge submission to the client. 
+There are edge cases where the A in ACId will not be true. E.g. transaction is committed, but network fails while server tries to acknolwedge submission to the client.
 
 ## Weak Isolation Levels 
 
@@ -51,10 +48,11 @@ Concurrency bugs (race conditions) don't arise in simultaneous reads. They only 
 Race condition bugs are non-deterministic - they sometimes occurr, sometimes don't, and are dependent on various external factors to the code/db (multiple attempts toa ccess the data simultaneously).
 
 Not from DDIA is a brief taxonomy:
+
 - write-read issue (dirty read)
 - read-write issue (non-repeatable read)
 - read-write (set-based): Phantom read
-- write-write (lost update): 
+- write-write (lost update)
 
 Note: we can see avoiding use of mutable states in your appliation code as a way to entirely avoid race conditions.
 
@@ -112,10 +110,8 @@ There are two cases to consider when we ask the question: how does the database 
 (1) Detecting reads of a stale MVCC object version (uncommitted write occured before the read)
 (2) Detecing writes that affect prior reads (the write occurs after the read)
 
-
-
 Isolation levels vs concurrency control
 
-Isolation levels are what you can guarantee. Serializable is the strongest level, and transactions behave as if they ran one at a time, in some order. There'll be no anomalies, no lost updates, no dirty reads, etc. 
+Isolation levels are what you can guarantee. Serializable is the strongest level, and transactions behave as if they ran one at a time, in some order. There'll be no anomalies, no lost updates, no dirty reads, etc.
 
-The concurrency control is about the mechanism you use to provide that isolation guarantee. Typically either optimistic concurrency or pessimistic. Pessimistic assumes conflicts will happen and prevents them upfront; optimistic assumes conflicts are rare, detects them at the end. 
+The concurrency control is about the mechanism you use to provide that isolation guarantee. Typically either optimistic concurrency or pessimistic. Pessimistic assumes conflicts will happen and prevents them upfront; optimistic assumes conflicts are rare, detects them at the end.

@@ -2,7 +2,7 @@
 
 ## Overview and Introduction
 
-This is essentially a chapter on storage engines, and on what they do, how they work under the hood, etc. We can split up storage engines into log-structured storage engines, and page-structured storage engines. 
+This is essentially a chapter on storage engines. On what they do, how they work under the hood, etc.
 
 There is a great deal of discussion on indexes in this chapter, and how the indexes used in databases work. We can think of this as explaining what happens 'under the hood' of indexes, when you - the developer - create indexes in your database. Different databases will utilise different data structures and algorithms to power their indexing, and this chapter explains the whats and hows of these in order for the developer to gain a deeper understanding. 
 

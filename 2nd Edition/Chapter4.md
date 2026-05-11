@@ -34,12 +34,50 @@ Cons
 
 Hash tables are not commonly implemented mainly for reasons highlighted above - especially the inefficiency of range queries. 
 
-More common to use a structure where you sort by key. SSTables are one such example. 
+More common to use a structure where you sort by key. SSTables are one such example. SSTables also store key-value pairs, but they're sorted by key, and each key appears only once in the file. We can use only some of the keys in memory, in which case it's called a *sparse* index. 
 
-Interestingly, Cockroach uses this. Cockroach uses LSM-tree indexing, using SSTables via the Pebble search engine. Pebble is inspired heavily by Rocks Db, and Cockroach actually used to use RocksDb storage engine. 
+ASIDE
+Cockroach uses this. Cockroach uses LSM-tree indexing, using SSTables via the Pebble search engine. Pebble is inspired heavily by Rocks Db, and Cockroach actually used to use RocksDb storage engine. 
 
-Sparse: index that stores only some of the keys.
+
 
 Each block of records can also be compressed.
 
-SSTable format makes reads better, but it's trickier for writes than a simple append-only log. We can't just add the file to the end, because then the table wouldn't be sorted. We solve this via a log-structured approach; this is a hybrid between an append-only log and a sorted file. 
+SSTable format makes reads better, but it' for writes than a simple append-only log. We can't just add the file to the end, because then the table wouldn't be sorted. We solve this via a log-structured approach; this is a hybrid between an append-only log and a sorted file. 
+
+1. Write comes in; write to memory (memtable). Add it to an in-memory ordered map data structure. With these data structures, you can insert keys in any order, look them up efficiently, and read them back in order.
+
+2. When memory gets too big, write to disk. We write the memtable to disk in sorted order as an SSTable file. This new SSTable file is the most recent segment of the db. Stored as a seperate file alongside the other files. Each file has a seperate index. 
+
+3. Reading step. First, try the memtable. If no success, try the most recent file. And so on. If appears nowhere, does not exist.
+
+4. Occasionally merge and compact. This is to combine sement files, discard overwritten or deleted values. 
+
+To delete a key, you append a special deletion record called a tombstone to the data file. When log segments are merged, the tombstone tells the merging process to discard any previous values for the deleted key. 
+
+As described above, we derive from this that more recent data will be much faster to retrieve than older data. To get around this, LSM storage engines often use Bloom filters. 
+
+### Bloom filters
+
+Bloom filters are probabilistic data structures. Extremely space-efficient. They can be used to test whether an element is a member of a set. Importantly, they can tell with 100% confidence if a member is *not* in the set, but only probabilistically if they *are* in the set.
+Probabilistic because of the potential of collisions. 
+
+So, the 'yes' is always probabilistic, but the 'no' is always deterministic. 
+
+he way these filters work:
+
+You have an array of 10 bool values, either true or false.. We build a hash function that will accept any input and hash it to a value between 0 and 10, corresponding to this arrray.
+
+So, User_1 comes in; we hash this (and therefore produce a deterministic response) and get 3. Therefore, value 3 in the array becomes true.
+
+
+
+We now want to check if User_1 exists. So, on the read, we hash User_1 again, and we get 3. Therefore true. BUT we can only take this as probabilistically true because of the risk of collisions. And we know about hashing that as our state space grows, collisions become less likely. So for an array of 10 values, collisions are *very* likely, almost inevitable (1/10 chance).
+
+
+
+Our trust in the probabilistic 'true' value can increase as the state space grows. And this is the trade-off: more state-space means more memory required, but the more we can trust it. Less state-space means less memory required (and therefore faster) but the less we can trust it.
+
+
+
+Note that it will always, deterministically, be correct if it tells you the member is not in the set. But note the subtlety here: the hash function may not be able to tell you accurrately if the member is or isn't in the set (it could be, or it couldn't be). But if it tells you it isn't, you should always fully believe it.

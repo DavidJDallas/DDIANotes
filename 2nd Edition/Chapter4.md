@@ -14,6 +14,8 @@ It's also written:
 
 This is also technically true regarding the writes, but I think it risks missing something a bit subtle. It does slow down writes, but if your db access patterns are such that your main write-access is very small writes (for example, single-row writes) then assuming that you have a decent number of rows already in your table, having an index in place will often significantly speed up your performance. For creating new rows, having a clustered index here would speed up the write in that the storage engine would spend far less time finding where to do the insert  (O(n) => O(log n)), and for updating rows, having some sort of secondary index would speed up writes in that you spend far less time actually finding the row in the first place (again, O(n) => O(log n)). The writes themselves will incur more overhead (you also have to update the index to inform it of the write), but you can have substantial performance gains by having indexes in place here. The index can move finding the row from scanning 1,000,000 rows into scanning just 13 rows.
 
+I found myself confused in this chapter at the structure. It's a chapter on storage engines, but much of the focus seems to be on indexes. I think the relationship here is that indexes are a vital part of the search engine performance; it's an internal mechanism of the storage engine. So the better way to think about, I think, is that this chapter is specifically on storage and retrieval, which just are what indexes do. A storage engine is resposible for how data is stored in the database, and how data is retrieved. Indexes are the way that the storage engine does this. 
+
 ## log-structured storage
 
 Starts by looking at log-structured storage, before moving onto B-tree structured storage. B-tree storage is the norm 
@@ -34,7 +36,7 @@ Cons
 
 Hash tables are not commonly implemented mainly for reasons highlighted above - especially the inefficiency of range queries. 
 
-More common to use a structure where you sort by key. SSTables are one such example. SSTables also store key-value pairs, but they're sorted by key, and each key appears only once in the file. We can use only some of the keys in memory, in which case it's called a *sparse* index. 
+More common to use a structure where you actually sort the data before you store it. SSTables also store key-value pairs, but they're sorted by key, and each key appears only once in the file. We can use only some of the keys in memory, in which case it's called a *sparse* index. 
 
 ASIDE
 Cockroach uses this. Cockroach uses LSM-tree indexing, using SSTables via the Pebble search engine. Pebble is inspired heavily by Rocks Db, and Cockroach actually used to use RocksDb storage engine. 
@@ -49,7 +51,7 @@ SSTable format makes reads better, but it' for writes than a simple append-only 
 
 3. Reading step. First, try the memtable. If no success, try the most recent file. And so on. If appears nowhere, does not exist.
 
-4. Occasionally merge and compact. This is to combine sement files, discard overwritten or deleted values. 
+4. Occasionally merge and compact. This is to combine segment files, discard overwritten or deleted values. 
 
 To delete a key, you append a special deletion record called a tombstone to the data file. When log segments are merged, the tombstone tells the merging process to discard any previous values for the deleted key. 
 
@@ -73,3 +75,7 @@ We now want to check if User_1 exists. So, on the read, we hash User_1 again, an
 Our trust in the probabilistic 'true' value can increase as the state space grows. And this is the trade-off: more state-space means more memory required, but the more we can trust it. Less state-space means less memory required (and therefore faster) but the less we can trust it.
 
 Note that it will always, deterministically, be correct if it tells you the member is not in the set. But note the subtlety here: the hash function may not be able to tell you accurately if the member is or isn't in the set (it could be, or it couldn't be). But if it tells you it isn't, you should always fully believe it.
+
+----
+
+False positives are not an issue for LSM based storage engines. If the bloom filter says that a key is not present, we can safely skip that SSTable, since we can be sure it doesn't contain that key. If we get a false positive - it says it's there but isn't, we have to do a bit of extra work but it's not a massive loss; the worst-case scenario is that we do a bit of extra work. 

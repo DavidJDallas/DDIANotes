@@ -101,4 +101,12 @@ B-trees tend to handle range queries better. Bloom filters don't help for range 
 Random writes: Used in b-trees. Small, scattered writes.
 Sequential writes: Used in LSM-trees. fewer, larger writes.
 
-Disks generally have higher Sequential write throughput than random-write throughput, which means that a log-structured engine can generally handle higher write throughput on the same hardware than a B-tree. Particularly big on spinning-disk drives, on the SSDs that most databases uses today, difference is smaller but noticeable. 
+Disks generally have higher Sequential write throughput than random-write throughput, which means that a log-structured engine can generally handle higher write throughput on the same hardware than a B-tree. Particularly big on spinning-disk drives, on the SSDs that most databases uses today, difference is smaller but noticeable.
+
+Clustered index: determines the physical order of data on the disk. Generally a bad idea to have a random value like a UUID as your key here, and better to have something sequential for writes to find and for reads to scan by. Clustered indexes also contain the actual data of the underlying table.
+
+Nonclustered indexes 
+
+I *think* general rule of thumb is - noncovering is good if large queries where doing 1 extra step is neglible. Covering is good if you're doing many frequent reads because that 1 extra step 1000s of times is gonna cost you, probably more so than holding that data on the actual data structure. 
+
+In CRDB covering is STORING. We trade-off extra storage costs for access speed.

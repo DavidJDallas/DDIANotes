@@ -57,6 +57,12 @@ To delete a key, you append a special deletion record called a tombstone to the 
 
 As described above, we derive from this that more recent data will be much faster to retrieve than older data. To get around this, LSM storage engines often use Bloom filters. 
 
+I was confused for a bit on how we can have append-only database structures like this but clearly are able to mutate rows, either updating them or deleting them. I think this works because of the following:
+
+-  As per steps 1-4, all newer data will be closer in the retrieval process: first the data is stored in the memtable, then flushed to disk. This means that the newer data will always be closer.
+- When reads happen, we always read the newest data first. Therefore, we will always retrieve the updated value first, and we treat this safely as the source of truth.
+- If a record is deleted, it's 'tombstoned' and so our read will acknowledge that this record does not exist any more. 
+
 ### Bloom filters
 
 Bloom filters are probabilistic data structures. Extremely space-efficient. They can be used to test whether an element is a member of a set. Importantly, they can tell with 100% confidence if a member is *not* in the set, but only probabilistically if they *are* in the set.
@@ -78,4 +84,21 @@ Note that it will always, deterministically, be correct if it tells you the memb
 
 ----
 
-False positives are not an issue for LSM based storage engines. If the bloom filter says that a key is not present, we can safely skip that SSTable, since we can be sure it doesn't contain that key. If we get a false positive - it says it's there but isn't, we have to do a bit of extra work but it's not a massive loss; the worst-case scenario is that we do a bit of extra work. 
+False positives are not an issue for LSM based storage engines. If the bloom filter says that a key is not present, we can safely skip that SSTable, since we can be sure it doesn't contain that key. If we get a false positive - it says it's there but isn't, we have to do a bit of extra work but it's not a massive loss; the worst-case scenario is that we do a bit of extra work.
+
+## B-Trees
+
+The B-tree is the most widely used storage structure. It's used in most SQL databases. B-trees break the db into fixed-size blocks or pages and can update-in-place.
+
+## B-trees vs LSM-trees 
+
+Rule of thumb: LSM-trees are faster for writes, B-trees for reads. 
+
+B-trees tend to handle range queries better. Bloom filters don't help for range queries in LSM-trees, since hashing all keys within the range is impractical. 
+
+'High write throughput can cause latency spikes in a log-structured storage engine if the memtable fills up. This happens if the data can't be written out to disk fast enough' (p129).
+
+Random writes: Used in b-trees. Small, scattered writes.
+Sequential writes: Used in LSM-trees. fewer, larger writes.
+
+Disks generally have higher Sequential write throughput than random-write throughput, which means that a log-structured engine can generally handle higher write throughput on the same hardware than a B-tree. Particularly big on spinning-disk drives, on the SSDs that most databases uses today, difference is smaller but noticeable. 

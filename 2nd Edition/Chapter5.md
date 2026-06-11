@@ -12,6 +12,11 @@ If you want a newer client to be able to call an older service, you need forward
 
 Backwards compatibility is usually easier to achieve. You know the format of the existing data, so you can explicitly handle it. Forwards compatibility can be trickier - you require old code to ignore additions made by newer code.
 
+This becomes a bit more subtle and tricky when it comes to databases, or systems where the client both reads and writes to the server. The initial structure is that when the client updates their application code, they must be backwards compatible with the server, and be forwards compatible with respect to the incoming request. Can be easy to think that the forwards compatibility is not a problem, because wrt to the client, no updates have happened to the server. And if the client was only reading, that would be true. But the client can write to the db and alter the schemas, in which case it then needs to update itself where it calls the server in order to be *forwards compatible* with the server, now. 
+
+A good rule of distributed systems is that whenever you read data, you must be backwards compatible (you must be able to read data from the past versions.)
+Whenever you write data, you need to be forwards compatible - you need to take into account newer versions of the code. 
+
 ## Formats for Encoding data
 
 Translation from in-memory representation to a byte sequence is called encoding/serialisation/marshalling. The reverse - translation from a byte-sequence into an in-memory representation is called decoding/parsing/deserialisation/unmarshalling. 

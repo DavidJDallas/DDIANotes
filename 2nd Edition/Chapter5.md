@@ -48,4 +48,9 @@ reader's schema: may be different.
 ## Merits of schemas
 
 
+For both Avro and Protobuf, these would predominantly be libraries for encoding/decoding data for network transfer, or for sending to your db as an application. Typically, databases would not use these schemas for various reasons. I think that a typical production-standard db would have a bespoke encoding/decoding process that they would write themselves tailored to the needs of their own engine. 
 
+
+## Summary
+
+Chapter looks at several ways of turning data structures into bytes on the network or on disk. The details of these encodings affect not only their efficiency, but also the architecture of applications and your options for evolving them. 

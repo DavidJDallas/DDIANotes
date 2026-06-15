@@ -35,4 +35,17 @@ It's impractical to have fully synchronous replication. Usually, if a db offers 
 
 In some systems, a majority (say 3/5) nodes are update synchronously, with the remaining being async. This is an example of a quorum. Majority quoroums are often used in eventually consistent systems or systems that use a consensus protocol for automatic leader election. 
 
-Async replication is widely used. 
+Async replication is widely used.
+
+### Setting up New followers
+
+How to ensure that the new follower has an accurate copy of the leader's data?
+Simply copying the data from the leader or the node is not enough since, assuming you don't want to literally lock the database for the duration that this occurrs, you need to account for the newer updates since the replication happens. 
+
+1. Take a consistent snapshot of the leader's db at some point in time. Most databases have this feature.
+
+2. Copy the snapshot to the new follower node.
+
+3. Follower connects to the leader and requests all data changes that have happened since snapshot was taken. Requires that the snapshot is associated with an exact position in the leader's replication log. 
+
+The practical steps vary massively between databases. In some systems, the process is fully automated, whereas in others it can be a somewhat arcane multi-step workflow that needs to be manually performed by an admin. 

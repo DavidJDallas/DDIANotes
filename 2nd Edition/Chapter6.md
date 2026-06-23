@@ -84,3 +84,27 @@ This is called failover. It can happen manually or automatically. If automatic, 
 (3) Reconfiguring the system use the new leader.
 
 Failover is full of things that can go wrong. 
+
+- If aysnc replication is used, the new leader may not have received all the writes from the old leader. Most common solution is to discard them (means no durability.) Especially dangerous if other storage systems outside of the db need to use them. 
+- Two nodes could both believe they are the leaders. Split brain. If both leaders accept writes, there is no process for resolving conflicts. Data likely to be lost or corrupted. 
+
+### Implementation of Replication Logs
+
+Several replication methods are used in practice. 
+
+#### Statement based replication
+
+Leader logs ever write request that it executes and then sends that statement log to its followers. E.g. ever INSERT, UPDATE, DELETE is forwarded to followers. This can be risky if:
+- It's non-deterministic.
+- Statements use auto-incrementing columns, or depend on existing data. 
+- Statements have side-effects (triggers, SPs, user-defined funcs).
+
+Was used in MySQL before 5.1 VoltsDB uses it, and makes it safe by requiring transactions to be deterministic. 
+
+#### Write-ahead log shipping
+
+In addition to writing the log to disk, the leader also sends it across the network to its followers.
+
+#### Problems with replication lag
+
+Being able to tolerate node failures is important, but just 1 part of why you'd want replication. It's also very helpful for scalability and latency. The former because it allows us to process more than 1 node can handle, and the latter because we can potentially place nodes closer to users, geogprahically. Can be called read-scaling architecture. 

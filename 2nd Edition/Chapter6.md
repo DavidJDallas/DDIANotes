@@ -105,6 +105,56 @@ Was used in MySQL before 5.1 VoltsDB uses it, and makes it safe by requiring tra
 
 In addition to writing the log to disk, the leader also sends it across the network to its followers.
 
-#### Problems with replication lag
+### Problems with replication lag
 
-Being able to tolerate node failures is important, but just 1 part of why you'd want replication. It's also very helpful for scalability and latency. The former because it allows us to process more than 1 node can handle, and the latter because we can potentially place nodes closer to users, geogprahically. Can be called read-scaling architecture. 
+Being able to tolerate node failures is important, but just 1 part of why you'd want replication. It's also very helpful for scalability and latency. The former because it allows us to process more than 1 node can handle, and the latter because we can potentially place nodes closer to users, geogprahically. Can be called read-scaling architecture.
+
+So: if your application is mainly read-only, replication like this will massively help to scale you upwards. But this approach only really works for asynchronous replication; if you tried to make it synchronous, all replications to the followers would fall apart if you had a single node outage and make the whole system unavailable to write to. But an async system may see outdated information if the follower has fallen behind. This can lead to apparent inconsistencies - two queries to the database at the same time can be different if they hit different nodes. These inconsistencies are temporary. This is known as *eventual consistency*.
+
+#### Reading your own writes
+
+Read-after-write consistency. A guarantee that if the user reloads the page, they will always see any updates they submitted themselves. 
+
+It seems that eventual consistency is the weakest sort of consistency, followed by read-after-write, for replication stuff. 
+
+There are various possible techniques to implement ready-after-write consistency:
+
+- when reading something that the user may have modified, read it from the leader or synchronously updated followers. This does require though that you know who wrote the data. If most things in the application are potentially editable by the user,this approach won't be effective (most things would have to be read from the leader)
+
+More complications arise when one user can access your application from multiple devices. 
+
+
+#### Monotonic reads
+
+If reading from asynchronous followers, it's possible to see things moving backwards in time. This can happen when the same user makes the same query twice, and hits different nodes on each read. For this to happen, the first read would be updated, and the second read would not be updated.
+
+Guaranteeing against this is called "Monotonic reads". Stronger guarantee than eventual consistency, weaker than strong consistency. 
+
+#### consistent prefix reads
+
+Looks like things move outside of a causal chain. Similar to monotonic in essence but with causality instead of time. E.g. An entity that is only sensible if caused by another entity happens before the causal entity. 
+
+
+### Solutions for replication lag
+
+There are ways for an application to provide stronger guarantees than the database itself. However, dealing with these kinds of issues in application code is complex and easy to get wrong. 
+
+'The simplest programming model for application developers is to choose a database that provides a strong consistency guarantee for replicas, such as linearisability, and supports ACID transactions. This allows you to mostly ignore the challengs that arise from replication and treat the db as if you just had a single node'.
+
+Interestingly, the counter to this came from the NoSql movement in 2010s, which said that the above model would not work for scalability purposes. But since then, a number of systems - newSQL - have started providing strong consistency and transaction support while also offering fault tolerance high availability and scalability advantages. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

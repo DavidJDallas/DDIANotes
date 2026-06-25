@@ -144,6 +144,77 @@ There are ways for an application to provide stronger guarantees than the databa
 Interestingly, the counter to this came from the NoSql movement in 2010s, which said that the above model would not work for scalability purposes. But since then, a number of systems - newSQL - have started providing strong consistency and transaction support while also offering fault tolerance high availability and scalability advantages. 
 
 
+## Multi-leader Replication
+
+The obvious big downside of single-leader replication is that all writes have to go through one node (the leader). And if you can't connect to the leader, you can't connect to the database. 
+
+Section focuses on asynchronous replication. 
+
+### Geographically Distributed Operation
+
+Rarely makes sense to use a multi-leader setup within a single region. You would usually use multi-leader spread over various geographical locations.
+
+Performance: May be better for multi-leader. Or at least has potential to be. 
+
+Tolerance of regional outages: Much easier with multi. If single-leader goes down, have to start failover process. This will solve it (promote a leader from another region) but not ideal. In multi-leader across multi-regions, works fine with one going down.
+
+Tolerance of network problems: Multi-leader can tolerate network problems better.
+
+Consistency: Single-leader wins. Far stronger consistency guarantees. Multi-leader simply can't provide same level of consistency guarantees.
+
+It therefore seems that a key trade-off between single vs multi-leader is trading off performance and availability with consistency. Single-leader can't provide the same promises of performance and uptime, but can provide better consistency. 
+
+Multi-leader is less common. 
+
+Multi-leader replication is a retrofitted feature in many dbs. Consequently there are often subtle config pitfalls and issues. For this reason, multi-leader is often considered dangerous territory. 
+
+### Multi-leader replication topologies
+
+A replication topology describes the communication paths along which writes are propagated from one node to another. 
+
+- Circular
+- Star
+- All-to-all
+
+All-to-all is most general. All leaders send all their writes to all other leaders. 
+
+### Problems with different topologies
+
+Circular and star: if 1 node fails, can interrupt the flow of replication messages between other nodes. 
+
+Fault tolerance of all-to-all is better. Therefore maybe seems like A2A is more in the spirit of multi-leader. 
+A2A: Some network links may be faster than others, meaning that some replication messages may overtake others.
+
+
+### Sync engines and local-first Software
+
+Multi-leader replication is also appropriate if you have an internet application that needs to continue to work while it's disconnected from the internet. The local device is a leader, can write, then when it comes online it syncs between the replicas of your calendar on all devices/the cloud.
+
+So, architecturally, this is v similar to multi-leader replication between regions. Each device is a region, and the network connection between them is extremely unreliable. 
+
+Live-edit applications like figma, google docs etc will also employ this style of replication. Each web browser tab that has opened the shared file is a replica, and any updates that you make to the file are async replicated to thje devices of the other users.
+
+### Dealing with Conflicting writes
+
+Biggest problem with multi-leader is that concurrent writes on diff leaders can lead to conflicts that need to be resolved. 
+
+#### Conflict avoidance. 
+
+The idea: prevent them from happening in the first place. I.e. at the application level. 
+
+#### Last Write wins
+
+If conflicts can't be avoided, simplest way of resolving is to attach a timestamp to each write and use the value with the most recent timestamp. 
+
+#### Manual Conflict Resolution
+
+
+## Leaderless Replication
+
+Takes the availability element of multi-leader to its logical extreme. Heavily inspired by Dynamo db, and so can sometimes be called dynamo replication. 
+
+Cassandra, Scylla and Riak all use leaderless, inspired by 
+
 
 
 

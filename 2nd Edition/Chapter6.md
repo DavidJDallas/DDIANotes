@@ -211,9 +211,11 @@ If conflicts can't be avoided, simplest way of resolving is to attach a timestam
 
 ## Leaderless Replication
 
-Takes the availability element of multi-leader to its logical extreme. Heavily inspired by Dynamo db, and so can sometimes be called dynamo replication. 
+Takes the availability element of multi-leader to its logical extreme. Heavily inspired by Dynamo, and so can sometimes be called dynamo replication. Interestingly, it's noted that Dynamo db is not not dynamo. Dynamo db is single-leader and is Amazon's in-house no-sql db.  
 
 Cassandra, Scylla and Riak all use leaderless, inspired by 
+
+The general idea for leaderless is that writing is massively sped up. You can write to any node. But the reads are slowed down, and configurable depending on how safe you want to be. If you're not too bothered about reading data that is definitely correct, you can configure it for faster reads. If you need correctness, you need to have slower reads since you'll need to verify the read against more nodes. 
 
 
 

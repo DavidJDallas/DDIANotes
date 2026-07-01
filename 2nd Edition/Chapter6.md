@@ -213,13 +213,57 @@ If conflicts can't be avoided, simplest way of resolving is to attach a timestam
 
 Takes the availability element of multi-leader to its logical extreme. Heavily inspired by Dynamo, and so can sometimes be called dynamo replication. Interestingly, it's noted that Dynamo db is not not dynamo. Dynamo db is single-leader and is Amazon's in-house no-sql db.  
 
-Cassandra, Scylla and Riak all use leaderless, inspired by 
+Cassandra, Scylla and Riak all use leaderless, inspired by Dynamo. 
 
 The general idea for leaderless is that writing is massively sped up. You can write to any node. But the reads are slowed down, and configurable depending on how safe you want to be. If you're not too bothered about reading data that is definitely correct, you can configure it for faster reads. If you need correctness, you need to have slower reads since you'll need to verify the read against more nodes. 
 
+### Writing to the db when a node is down
+
+In leaderless, there's no such thing as failover. All replicas are equal, and no leaders. The configurability around how many nodes need to accept writes, and how many nodes need to give the same read values, are configurable. You configure this to trade-off latency and availability for consistency.
+
+For writes, the data is sent to multiple nodes in parallel. For the client to determine which responses are up-to-date and which are outdated, every value that is written needs to be tagged with a version number or timestamp. When a client receives multiple values in response to a read, it uses the one with the greatest timestamp, even if that response is only returned by 1 value. 
+
+#### Catching up on Missed Writes
+
+The replication system, to ensure that eventually all data is copied to every replica, can use several mechanisms:
+
+- Read repair: The client can work out which node is returning a stale read (e.g. via versioning as stated above). It then feeds this back to the server and the server updates accordingly. Works well for values that are read often.
+- Hinted Handoff: If one replica is unavailable, another replica may store writes on its behalf in the form of hints. Then when other node comes back, the other node hands the hints over and deletes.
+- Anti-Entropy: BAckground process periodically looks for differences in data between replicas and then copies any missing data from one replica to another. 
 
 
+#### Using quorums for reading and writing 
 
+If there are n replicas, every write must be confirmed by w nodes to be considered successful, and we must query at least r nodes for each read. As long as w + r > n, we can expect to have an up to date reading. I.e. the nodes that we write and read from, combined, must be greater than the number of nodes. IF reads and writes obey this formula are called quorum reads and writes. You can think of r and w as the min number of votes required for the read/write to be valid.
+
+You'd typically make n an odd number, to avoid draws. 
+
+If w < n, we can still process writes if a node is unavailable.
+If r < n, we can still proces reads if a node is unavailable. 
+
+Example:  With n = 3, r =2, we can tolerate 1 unavailable node.
+With n =5 , w=3, r =3, we can tolerate 2 unavailable nodes. 
+
+Params determine how many we wait for, not how many we send to. We typically sent to all nodes in parallel.  
+
+#### Understanding the limitations of quorum consistency
+
+quorums are not necessarily majorities. And other quorum assignments are possible. You can also set w and r to smaller numbers, so that quorum conditions are not satisfied. Read and writes are here sent to all nodes, but laxer criteria to succeed. Here, you would trade-off consistency for both latency and availability - it would be potentially faster and more availalble, but you wouldn't have a consistency guarantee. 
+
+Even with a quoroum condition, there are confusing edge cases. Gives a list of them. So , although quorums appear to guarantee that a read returns the latest written value, in practice it's not so simple. It's not wise to take quorums as absolute guarantees, and if you want to use leaderless databases, it's probably best that you are prioritising eventual consistency. 
+
+
+#### Monitoring Staleness
+
+In leaderless systems, there's no fixed order in which writes are applied, which makes monitoring more difficult. 
+
+### Single leader vs leaderless replication Performance
+
+The resilience of a leaderless system comes from the fact that it doesn't distinguish between the normal case and the failure case. 
+
+236: 'Multi-leader replication can offer even greater resilience against network interruptions than leaderless replication, since reads and writes require communication with only one leader, which can be co-located with the client'. 
+
+### Detecting Concurrent Writes
 
 
 

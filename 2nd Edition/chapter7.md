@@ -58,7 +58,19 @@ We can assign a contigous range of partition keys to each shard. E.g. like the v
 
 #### Rebalancing key-range sharded data
 
+With databases that manage shared boundaries automatically, a shard split is typically triggered by the shard reaching a configured size. In some systems, the write thoroughput being above a certain threshold does it.
+
 ### Sharding by hash of key
+
+Key-range sharding is useful if you want records with nearby (but different) partition keys to be grouped into the same shard. If you don't care if they're near each other, a common approach is then to has the partition keys before mapping it to a shard. 
+
+To get this to correspond to an actual shard, we can do Hash modulos. We use the modulo operator by say, 10, on it, and it returns  a number between 1 and 10. The problem with this is that if the number of nodes N changes, most of the keys have to be moved from one node to another. This is costly. It's easy to compute, but requires lots of rebalancing, typically. 
+
+A simple but widely used solution is to create many more shards than there are nodes and assign several shards to each node. In this model, only entire shards are moved between nodes. So still some cost, but not as bad. This approach used in Citus (sharding layer for PostgreSQL), Riak, Elasticsearch, and Couchbase. Works as long as you have a good estimate of how many shards you will eventually need. If this is wrong, you need an expensive resharding operation.
+
+If the required number can't be predicted in advance, it's better to use a scheme in which the number of shards can adapt easily to the workload.
+We can combine key-range sharding with a hash function so that each shard contains a range of hash values rather than a range of keys. 
+
 
 ### Skewed workloads and releiving hot spots
 

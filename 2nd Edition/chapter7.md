@@ -71,6 +71,13 @@ A simple but widely used solution is to create many more shards than there are n
 If the required number can't be predicted in advance, it's better to use a scheme in which the number of shards can adapt easily to the workload.
 We can combine key-range sharding with a hash function so that each shard contains a range of hash values rather than a range of keys. 
 
+#### Consistent Hashing
+
+A consistent hashing algorithm is a hash function that maps keys to a specific number of shards that satisfies two properties. 
+
+(1) The number of keys mapped to each shard is roughly equal.
+(2) When the number of shards changes, as few keys as possible are removed from one shard to another. 
+
 
 ### Skewed workloads and releiving hot spots
 
@@ -78,8 +85,12 @@ We can combine key-range sharding with a hash function so that each shard contai
 
 ## Request Routing
 
+If you want to read or write a particular key, how do you know which node - that is, which IP address and port number - you need to connect to? This is called request routing. With sharded dbs, a request for a key can be handled only by a node that is a replica for the shard containing the key. 
+
 ## Sharding and Secondary Indexes
 
+
+Keep apart partioning itself, vs rebalancing mechanisms. For example, the Mod N approach is a rebalancing mechanism, not a sharding problem in and of itself. 
 
 
 

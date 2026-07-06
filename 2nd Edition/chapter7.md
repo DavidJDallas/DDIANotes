@@ -90,6 +90,23 @@ If you want to read or write a particular key, how do you know which node - that
 ## Sharding and Secondary Indexes
 
 
+All sharding schemes discussed so far rely on client knowing the partition key for any record it wants to access. Most easily achieved in a key-value data model, where the partition key is the first part of the PK. 
+Situation becomes more complicated if secondary indexes are involved. 
+
+Two main approaches to sharding a db with secondary indexes: local and global.
+
+### Local Secondary Indexes
+
+Here, each shard would locally hold an index pertaining to its own data and not be aware of any other shard's data. Can make read queries quite expensive, since you will often have to go to many different shards since each shard will only be indexing its own data. 
+
+Used by MongoDb, Riak, Cassandra.
+
+### Global Secondary Indexes
+
+Here, the secondary index would be global, but would itself be sharded across many nodes. 
+
+Used by CockroachDb, TiDb. 
+
 Keep apart partioning itself, vs rebalancing mechanisms. For example, the Mod N approach is a rebalancing mechanism, not a sharding problem in and of itself. 
 
 

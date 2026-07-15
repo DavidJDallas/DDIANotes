@@ -20,4 +20,17 @@ Key goals for it were
 (v) To provide a means of recovering the contents of the database to a consistent state after a failure of hardware or software.
 I.e. A and I. 
 
-Phase 0 involved development of SQL, and happened 1974-1975. 
+Phase 0 involved development of SQL, and happened 1974-1975.
+
+
+## Summary
+
+Whilst the view expressed in the paper that a system that implements the algorithms itself in a declarative style like SQL, this was not taken for granted in the 1970s - many believed that a programmer who explicitly navigated physical links and indexes themselves would necessarily outperform a system that chose its own access paths.
+
+System R did not just invent SQL. It integrated most of the architecture now associated with relational DBMSs and subjected it to experimental use. 
+
+Earlier navigational DBs represented information through both:
+- The contents of the records
+- Explicit connections, pointers, chains, or sets between records.
+
+

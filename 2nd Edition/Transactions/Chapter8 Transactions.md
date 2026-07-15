@@ -14,8 +14,25 @@ The second comes under the 'I' of ACID - Isolation.
 
 ## The History
 
-- Follow the style of System R in 1975 (1 paper)
-- ACID coined by Harder and Reuter. 
+### The Origin of Transactions
+Transactions and the idea of Transactions predate the ACID acronym by about 10 years. I got curious about the origins of this in computing and it seems that the first proto-usage of the term happens in the 1973 paper by Davies and Bjork, who discuss the idea of 'spheres of control'. A sphere enclosed a piece of work whos effects could be:
+- Committed
+- Backed out
+- Isolated from surrounding work
+- nested inside another sphere
+
+In 1974-1976 the word Transaction is explicitly defined across a couple of papers which captures the essence of this. System R uses this notion and implements, alongside with SQL. 
+
+Over late 70s into early 80s, the term begins to have a bit more treatment by people attempting to come up with a canonical definition. For example Gray's 1981 paper defines a Transaction as:
+
+'A transaction is a transformation of state which has the properties of atomicity (all or nothing), durability (effects survive failures) and consistency(a correct transformation).' (1981, Abstract).
+
+In this paper Gray does include what we now know as Isolation, but it falls under consistency here. Maybe this is more consistent with other elements of Computer science?
+
+ACID coined in the Harder and Reuter paper and has become the canonical usage now of how we define Transactions. Where ACID are defining properties of a Transaction such that to perform a Transaction is necessarily to adhere to ACID criteria. 
+
+### The Move Away from Transactions
+
 
 Late 2000s: NoSQL databases come onto the scene and prioritise availability and low latency over consistency. Transactions were a fatality of this. Transactions trade off consistency for slowing things down, and making the db more available. 
 

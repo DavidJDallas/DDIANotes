@@ -15,21 +15,23 @@ The second comes under the 'I' of ACID - Isolation.
 ## The History
 
 ### The Origin of Transactions
-Transactions and the idea of Transactions predate the ACID acronym by about 10 years. I got curious about the origins of this in computing and it seems that the first proto-usage of the term happens in the 1973 paper by Davies and Bjork, who discuss the idea of 'spheres of control'. A sphere enclosed a piece of work whos effects could be:
+Transactions and the idea of Transactions predate the ACID acronym by about 10 years. I got curious about the origins of this in computing and it seems that the first proto-usage of the term happens in the 1973 paper by Davies and Bjork, who discuss the idea of 'spheres of control'. This is meant to be discussed in the context of computing more broadly. A sphere enclosed a piece of work whose effects could be:
 - Committed
 - Backed out
 - Isolated from surrounding work
 - nested inside another sphere
 
-In 1974-1976 the word Transaction is explicitly defined across a couple of papers which captures the essence of this. System R uses this notion and implements, alongside with SQL. 
+In 1974-1976 the word Transaction is explicitly defined across a couple of papers which captures the essence of this. System R uses this notion and implements, alongside with SQL. In 1976 this idea is restricted solely to databases and the word 'Transaction' is given to it. 
 
 Over late 70s into early 80s, the term begins to have a bit more treatment by people attempting to come up with a canonical definition. For example Gray's 1981 paper defines a Transaction as:
 
 'A transaction is a transformation of state which has the properties of atomicity (all or nothing), durability (effects survive failures) and consistency(a correct transformation).' (1981, Abstract).
 
-In this paper Gray does include what we now know as Isolation, but it falls under consistency here. Maybe this is more consistent with other elements of Computer science?
+In this paper Gray does include what we now know as Isolation, but it falls under consistency here. Maybe this is more in-line with other elements of Computer science?
+ 
+ACID coined in the Harder and Reuter 1983 paper and has become the canonical usage now of how we define Transactions. Here, ACID is defined in the way that we use it now, and it's meant to provide necessary and jointly sufficient conditions for defining a Transaction. That is, a database implements Transactions if and only if the Transaction has A, C, I , and D.
 
-ACID coined in the Harder and Reuter paper and has become the canonical usage now of how we define Transactions. Where ACID are defining properties of a Transaction such that to perform a Transaction is necessarily to adhere to ACID criteria. 
+The cited main aim of this paper is 'establish an adequate and precise terminology for a topic in which the confusion of concepts and implementational aspects still imposes a lot of problems'. In other words, at the time of them writing, there wasn't a clear canonical definition of a Transaction. 
 
 ### The Move Away from Transactions
 
@@ -43,9 +45,9 @@ But NewSQL stuff flipped that narrative. CRDB, TiDB, Spanner, FoundationDB, Yuga
 Says its a bit of a gimmick now.
 
 - Atomicity: All the items in your transaction will be written or fail together.
-- Consistency: Guarantee that your data is accurrately captured onto disk, basically. Anything else is up to the application level.
+- Consistency: Guarantee that your data respects the invariants of your application code. Klepmann points out that really this is down to the application.  
 - Isolation: Concurrently executing transactions are isolated from each other. 
-- Durability: Data is persisted to disk if it returns a successful message. Nowadays maybe also is replicated.
+- Durability: Data is persisted to disk if the transaction is successful. Nowadays maybe also is replicated.
 
 C isn't really a condition. D is pretty basic in terms of whether or not you have it. 
 

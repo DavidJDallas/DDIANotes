@@ -34,7 +34,9 @@ But really, the bulk of this chapter is for the I in ACID (Isolation).
 
 1974 (but not actually in print until 1976): Idea taken specifically to databases and the word 'Transaction' is given to it. (Eswaran et al paper)
 
-1975: System R started to be developed. First database to implement Transactions, create and implement SQL (!)
+1975: System R started to be developed. First database to implement Transactions, create and implement SQL (!). In a sep talk Kleppmann says that the typical types of isolation:
+- Serialisable, repeatable reads, snapshot isolation, read committed, read uncommitted
+Are all coined in this db also. 
 
 1981: Gray paper (Gray worked on System R and involved a lot in the IBM research around this). Attempt to define a Transaction more clearly: 'A transaction is a transformation of state which has the properties of atomicity (all or nothing), durability (effects survive failures) and consistency (a correct transformation).'
 So, missing the 'I', but this is implicitly included in consistency.
@@ -66,7 +68,7 @@ But many non-relational databases don't have this ability. (Surely this isn't wh
 
 ### SO writes
 
-A and I also apply when a single object is being changed. Example of writing a large json object. Storage engines almost universally aim to provide atomicity and isolation the level of a single object. 
+A and I also apply when a single object is being changed. Example of writing a large json object. Storage engines almost universally aim to provide atomicity and isolation the level of a single object. Therefore the suggestion is that satisfying this criterion does not qualify for saying you support Transactions. 
 
 ### Need for MO transactions
 
@@ -77,9 +79,13 @@ Could we do without Multi-object writes? And just be safer and do everything sin
 
 ### Handling Errors and Aborts
 
-There are some ways it can go wrong:
+There are some ways it can go wrong when we simply re-try an aborted transaction.
 
-- IF the transaction actually succeeded, but the network was interruped while the server tried to ack the successful commit to the client, then retrying the transaction causes it to be performed twice unless you have an additional application-level dedupe mechanism in place. 
+- The re-try mechanism is only worth doing if you're facing a transitive error.
+
+- IF the transaction actually succeeded, but the network was interrupted while the server tried to acknowledge the successful commit to the client, then retrying the transaction causes it to be performed twice unless you have an additional application-level de-dupe mechanism in place. 
+
+- If the transaction has side effects, you don't want to retry without some sort of safety mechanism in place. 
 
 
 

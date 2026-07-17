@@ -1,48 +1,17 @@
 # Transactions
 
-In case it's not clear, all Transactions are necessarily implementing ACID. ACID is a specific guarantee that Transactions give you.
-
-The two main things that a transaction prevents against are:
-- A failure at some point in your workflow that causes your database operation to fail mid-process, where one of those events in the process is a write.
-- Concurrency control.
+When writing to a db, loads of things can go wrong. Transactions prevent the fallout of a lot of this. It 'allows the application to ignore certain potential error scenarios and concurrency issues, because the database takes care of them instead' (p278).
 
 
+The first of these - allowing the developer to ignore certain error scenarios - comes under the 'A' of ACID - Atomicity. Could also be called 'all-or-nothing' and have a good similar affect. But essentially all of your operations are bunched into a single unit and succeed or fail together. This allows for consistency guarantees and for you to be able to reason about things much easier. It won't prevent the problem (a failure at some point in the system) but it can stop the negative consequences of it. 
 
-The first comes under the 'A' of ACID - Atomicity. Could also be called 'all-or-nothing' and have a good similar affect. But essentially all of your operations are bunched into a single unit and succeed or fail together. This allows for consistency guarantees and for you to be able to reason about things much easier. 
+The second of these - allowing the developer to ignore at least some concurrency issues - comes under the 'I' of ACID - Isolation. As will be seen, the 'at least some' qualifier is needed because this depends on what isolation guarantee the database gives us. We can have much weaker forms of isolation that just prevent no dirty reads and no dirty writes (e.g Read-committed isolation) all the way through to serialisable isolation where the guarantee is strongest and allows the developer to operate on the assumption that they will run *as if* the transactions were being run one after the other.
 
-The second comes under the 'I' of ACID - Isolation. 
+As always, how strong you want your isolation guarantee trades off with performance - weaker isolation guarantees generally means more potential to be performative, but with reduced consistency guarantees. And vice versa. 
 
-## The History
-
-### The Origin of Transactions
-Transactions and the idea of Transactions predate the ACID acronym by about 10 years. I got curious about the origins of this in computing and it seems that the first proto-usage of the term happens in the 1973 paper by Davies and Bjork, who discuss the idea of 'spheres of control'. This is meant to be discussed in the context of computing more broadly. A sphere enclosed a piece of work whose effects could be:
-- Committed
-- Backed out
-- Isolated from surrounding work
-- nested inside another sphere
-
-In 1974-1976 the word Transaction is explicitly defined across a couple of papers which captures the essence of this. System R uses this notion and implements, alongside with SQL. In 1976 this idea is restricted solely to databases and the word 'Transaction' is given to it. 
-
-Over late 70s into early 80s, the term begins to have a bit more treatment by people attempting to come up with a canonical definition. For example Gray's 1981 paper defines a Transaction as:
-
-'A transaction is a transformation of state which has the properties of atomicity (all or nothing), durability (effects survive failures) and consistency(a correct transformation).' (1981, Abstract).
-
-In this paper Gray does include what we now know as Isolation, but it falls under consistency here. Maybe this is more in-line with other elements of Computer science?
- 
-ACID coined in the Harder and Reuter 1983 paper and has become the canonical usage now of how we define Transactions. Here, ACID is defined in the way that we use it now, and it's meant to provide necessary and jointly sufficient conditions for defining a Transaction. That is, a database implements Transactions if and only if the Transaction has A, C, I , and D.
-
-The cited main aim of this paper is 'establish an adequate and precise terminology for a topic in which the confusion of concepts and implementational aspects still imposes a lot of problems'. In other words, at the time of them writing, there wasn't a clear canonical definition of a Transaction. 
-
-### The Move Away from Transactions
-
-
-Late 2000s: NoSQL databases come onto the scene and prioritise availability and low latency over consistency. Transactions were a fatality of this. Transactions trade off consistency for slowing things down, and making the db more available. 
-
-But NewSQL stuff flipped that narrative. CRDB, TiDB, Spanner, FoundationDB, YugabyteDb all incorporate Transactions and are highly scalabale databses. 
 
 ## What is ACID?
 
-Says its a bit of a gimmick now.
 
 - Atomicity: All the items in your transaction will be written or fail together.
 - Consistency: Guarantee that your data respects the invariants of your application code. Klepmann points out that really this is down to the application.  
@@ -55,6 +24,39 @@ There's a little bit of ambiguity around Atomocity. And the book reflects that. 
 - Single-object or multi-object Operations. (Combined with how this ties into isolation levels too.)
 
 But really, the bulk of this chapter is for the I in ACID (Isolation). 
+
+
+## The History
+
+### The Origin of Transactions
+
+1973: Davies and Bjork. 'Spheres of Control'. Applied to general computing, not specifically databases. A sphere enclosed a piece of works whose effects could be: (i) committed, (ii) backed out, (iii) isolated from surrounding work, (iv) nested inside another sphere.
+
+1974 (but not actually in print until 1976): Idea taken specifically to databases and the word 'Transaction' is given to it. (Eswaran et al paper)
+
+1975: System R started to be developed. First database to implement Transactions, create and implement SQL (!)
+
+1981: Gray paper (Gray worked on System R and involved a lot in the IBM research around this). Attempt to define a Transaction more clearly: 'A transaction is a transformation of state which has the properties of atomicity (all or nothing), durability (effects survive failures) and consistency (a correct transformation).'
+So, missing the 'I', but this is implicitly included in consistency.
+
+1983: Harder and Reuter paper where canonical definition of a Transaction is given via ACID acronym. ACID intended to provide necessary and jointly sufficient conditions for defining what a Transaction is. 
+
+
+### The Move Away from Transactions
+
+
+Late 2000s: NoSQL databases come onto the scene and prioritise availability and low latency over consistency. Transactions were a fatality of this. Transactions trade off consistency for slowing things down, and making the db more available. With rise of distributed computing Transactions were often what got cut.
+
+2006: Google's BigTable
+2007: Amazon's Dynamo (not to be confused with dynamoDb)(This is also the reference that Klepmann gives in Replication chapter on what pioneered leaderless replication).
+2008: BASE paper (Basically available, Soft State, Eventual Consistency)
+
+Then: 'NewSQL'. Transactional implemenations introduced into new distributed systems stuff. Seen as bridging the best of both worlds, to a degree. 
+2012: Google's Spanner paper
+2014: Cockroach DB
+
+But NewSQL stuff flipped that narrative. CRDB, TiDB, Spanner, FoundationDB, YugabyteDb all incorporate Transactions and are highly scalabale databses. 
+
 
 ## Single Object and Multi-Object Operations
 

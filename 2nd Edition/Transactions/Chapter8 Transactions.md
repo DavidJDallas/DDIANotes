@@ -85,7 +85,31 @@ There are some ways it can go wrong when we simply re-try an aborted transaction
 
 - IF the transaction actually succeeded, but the network was interrupted while the server tried to acknowledge the successful commit to the client, then retrying the transaction causes it to be performed twice unless you have an additional application-level de-dupe mechanism in place. 
 
-- If the transaction has side effects, you don't want to retry without some sort of safety mechanism in place. 
+- If the transaction has side effects, you don't want to retry without some sort of safety mechanism in place.
 
+## Weak Isolation Levels 
 
+The weakest isolation level is Read Committed. This provides a guarantee of no dirty reads, and no dirty writes. 
 
+On a step-up from Read Committed, we have Repeatable Reads and Snapshot Isolation. These are basically indistinguishable for a user, but have very different implementation details. Repeatable reads utilises locks more, and was implemented in the original System R database. Snapshot Isolation came in 1995, and uses more sophisticated techniques like MVCC.
+
+### Read Committed
+
+Makes two guarantees:
+
+- When reading from the db, you will see only the data that has been committed (no dirty reads)
+
+- When writing to the database, you will overwrite only data that has been committed. (No dirty writes).
+
+The most common way to prevent *dirty writes* is to use row-level locks. When a transaction wants to modify a particular row, it must first acquire a lock on that row. It then holds that lock until the transaction is committed or aborted. 
+
+To prevent dirty reads, we could implement the same locking mechanism. But this is usually overkill for performance-wise since it blocks reads more frequently than is required. More common: 
+'For every row that is written, the database remembers both the old committed value and the new value set by the transaction that currently holds the write lock. While the transaction is ongoing, any other transactions that read the row are simply given the old value' (p293).
+
+Some dbs support an even weaker level: Read uncommitted. Prevents dirty writes but doesn't prevent dirty reads. This can provide better perf (expected). However, says that it can reduce the probability of lost updates. 
+Trying to get clear on this last bit. A few possible explanations jump out. But first, we should be clear that fundamentally a lost update is a read-modify-write race condition where two transactions will read the same value simultaneously, both update it, but then only the last to successfully commit their transaction will get the update. The first one to commit will have their update lost, hence the name.
+(1) By avoiding dirty reads you will get more up-to-date data from your reads. You therefore reduce the risk of stale data and rely on the fact that most transactions will not fail, therefore increasing your odds of avoiding a lost-update but increasing the risk overall of other types of inconsistent data issues. 
+
+### Snapshot Isolation and Repeatable Reads
+
+In addition to the guarantees that Read Committed gives you, these Isolation levels also guarantee you against *read skew*. 

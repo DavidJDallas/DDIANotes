@@ -112,4 +112,17 @@ Trying to get clear on this last bit. A few possible explanations jump out. But 
 
 ### Snapshot Isolation and Repeatable Reads
 
-In addition to the guarantees that Read Committed gives you, these Isolation levels also guarantee you against *read skew*. 
+In addition to the guarantees that Read Committed gives you, these Isolation levels also guarantee you against *read skew*. Read skew is a race condition that will be fixed if you re-read, but is a temporary bad read. 
+
+Snapshot isolation is the most common solution to this problem. The idea is that each transaction reads from a consistent snapshot of the database - it sees all the data that was committed to the database at the start of the transaction. 
+
+- To implement, typically uses write locks to prevent dirty writes. This blocks other writes. 
+- But reads don't need locks. 
+- Readers never block writers and writers never block readers. 
+- Generally implemented using a generalisation of the mechanism for preventing dirty reads, but instead of just using 2 versions of each row, the db must potentially keep many versions. Hence MVCC - Multi-version concurrency control. 
+
+So, we can say that MVCC is an implementation technique to achieve snapshot isolation. 
+
+### Preventing Lost Updates
+
+MVCC is a commonly use implementation technique for dbs and often used to implement SSI. 

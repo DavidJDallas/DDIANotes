@@ -125,4 +125,94 @@ So, we can say that MVCC is an implementation technique to achieve snapshot isol
 
 ### Preventing Lost Updates
 
-MVCC is a commonly use implementation technique for dbs and often used to implement SSI. 
+The best known race condition that involves concurrently writing transactions is called a 'lost update'. It's a read-modify-write problem.
+
+Below are common solutions to Lost Updates.
+#### Atomic Write Operations
+
+- Instead of doing a read-modify-write, you just do a write directly. E.g. in SQL, UPDATE syntax. 
+
+- ORM frameworks can make it easy to accidentally write code that perform unsafe read-modify-write cycles. 
+
+#### Explicit locking
+
+- use the application to explicitly lock objects that are going to be updated. 
+
+- Carries risks of (i) you can always forgot to implement this if its your policy, (ii) is a blocking operation and can cause deadlocks. 
+
+#### Automatically Detecting Lost Updates
+
+Alternatively, we can allow them to happen in parallel, and let the db do the work. Lots of databases at the Snapshot Isolation level detect for this automatically. 
+
+#### Conditional writes
+
+Some databases allow for conditional writes - an operation that prevents lost updates by allowing an update to happen only if the value has not changed since you last read it.
+
+- Sometimes called optimistic locking.
+
+
+#### Conflict Resolution and Replication
+
+If your db is replicated, preventing LUs takes on another dimension. Because the dbs have copies of the data on multiple nodes and data can potentially be modified concurrently on different nodes, additional steps need to be taken. 
+
+Generally, techniques based on locks or conditional writes don't apply in the context of multi-leader or leaderless, since they allow several writes to happen concurrently. 
+
+Instead, a common approach is to allow concurrent writes to create several conflicting versions, and to use application code or specialised data structures to resolve and merge these versions after the fact. 
+
+
+### Write Skews and Phantoms
+
+A more subtle class of race conditions between concurrent writes.
+
+- Doctor on-call example is an example of 'Write Skew'. Not a dirty write, not a Lost Update. 
+
+- Can think of write-skew as a generalisation of the Lost-Update problem. 
+
+- Occurrs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the same object, you get a dirty write or lost update anomaly, depending on the timing. 
+
+- With preventing write skew, the ways to prevent it are more limited vs LUs. Atomic single-object operations don't help, as multiple objects are involved. 
+
+- Automatic detection of LUs that you find in some implementation of SI doesn't help. To automatically prevent, this requires true serialisation.
+
+- If you don't use serialisability, the 2nd best option is probably to explicitly lock the rows that the transaction depends on. 
+
+
+#### Phantoms causing write Skews
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

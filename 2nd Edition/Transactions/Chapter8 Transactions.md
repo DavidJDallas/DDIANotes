@@ -168,7 +168,7 @@ A more subtle class of race conditions between concurrent writes.
 
 - Can think of write-skew as a generalisation of the Lost-Update problem. 
 
-- Occurrs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the same object, you get a dirty write or lost update anomaly, depending on the timing. 
+- Occurs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the same object, you get a dirty write or lost update anomaly, depending on the timing. 
 
 - With preventing write skew, the ways to prevent it are more limited vs LUs. Atomic single-object operations don't help, as multiple objects are involved. 
 
@@ -180,8 +180,29 @@ A more subtle class of race conditions between concurrent writes.
 #### Phantoms causing write Skews
 
 
- 
+A phantom is a phenomenon where whilst you are reading from a specific range in your database that matches a certain criteria, the specific range is mutated (updated/deleted/inserted to) which will not have been taken into account when you have initially made the read that determines what items need to be updated. The data you have read and will go on to make decisions informed by, has now changed.
 
+
+Snapshot Isolation avoids phantoms in read-only queries, but not for transactions that involve writes. 
+
+You can materialise conflcits, but serialisability is far preferrable. 
+
+## serialisability
+
+3 different ways to do serialisability:
+
+- Literally execute transactions one after the other
+- 2PL. First established technique, 1976 (?), established formally in ''. In the Pessimistic CC family.
+- Optimistic concurreny control, e.g. serialisable snapshot isolation. 
+
+
+### Actual serial Execution
+
+May seem obvious, but only been > 2000s that this has been do-able, given that we need single-threaded loops for executing the transactions. RAM became cheap enough to keep the entire active dataset in memory, and designers realsied that OLTP transactions are usually short and make only a small number of reads and writes. 
+
+- Implemented in VoltDb, H-Store, Redis, Datomic. 
+
+#### Encapsulating transactions in Stored Procedures
 
 
 

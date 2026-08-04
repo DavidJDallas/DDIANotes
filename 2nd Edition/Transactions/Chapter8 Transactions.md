@@ -125,9 +125,19 @@ So, we can say that MVCC is an implementation technique to achieve snapshot isol
 
 ### Preventing Lost Updates
 
+This next section follows the general core: Snapshot Isolation is quite good, and prevents certain race conditions. And does so in a more efficient way than traditional approaches of taking out locks. It also - as we see - laid the foundations of serialisable snapshot isolation that was published in 2008, which most modern serialisability is built upon. 
+
+But it nonetheless leaves the developer using it open to various race conditions. 
+
+Lost Updates. Bad, but preventable.
+Write skews. Generalised version of Lost Updates, and can't straightforwardly be prevented without serialisability.
+Similarly, write skews also can involved phantoms - a whole class of caused race conditions which again can't straightfowardly be prevented without introducing serialisability. 
+
 The best known race condition that involves concurrently writing transactions is called a 'lost update'. It's a read-modify-write problem.
+It's not seen as damning, because it's both more easily preventable, and SSI automatically prevents it. 
 
 Below are common solutions to Lost Updates.
+
 #### Atomic Write Operations
 
 - Instead of doing a read-modify-write, you just do a write directly. E.g. in SQL, UPDATE syntax. 
@@ -162,7 +172,7 @@ Instead, a common approach is to allow concurrent writes to create several confl
 
 ### Write Skews and Phantoms
 
-A more subtle class of race conditions between concurrent writes.
+A more subtle class of race conditions between concurrent writes. And nastier than LUs because not straightforward to fix.
 
 - Doctor on-call example is an example of 'Write Skew'. Not a dirty write, not a Lost Update. 
 
@@ -182,6 +192,7 @@ A more subtle class of race conditions between concurrent writes.
 
 A phantom is a phenomenon where whilst you are reading from a specific range in your database that matches a certain criteria, the specific range is mutated (updated/deleted/inserted to) which will not have been taken into account when you have initially made the read that determines what items need to be updated. The data you have read and will go on to make decisions informed by, has now changed.
 
+First mentioned in 1976 paper that first introduces 2PL, which proves that 2PL properly applied avoids concurrency issues caused by phantoms. 
 
 Snapshot Isolation avoids phantoms in read-only queries, but not for transactions that involve writes. 
 
@@ -189,11 +200,13 @@ You can materialise conflcits, but serialisability is far preferrable.
 
 ## serialisability
 
+
+
 3 different ways to do serialisability:
 
 - Literally execute transactions one after the other
-- 2PL. First established technique, 1976 (?), established formally in ''. In the Pessimistic CC family.
-- Optimistic concurreny control, e.g. serialisable snapshot isolation. 
+- 2PL. First established technique, 1976 (?), established formally in 'Notions of Consistency and Predicate Locks in a database system'. In the Pessimistic CC family.
+- Optimistic concurreny control, e.g. serialisable snapshot isolation. First proposed 2008 'Serializable Isolation for Snapshot Databases' (Cahill et al). This takes Snapshot isolation (1995) and makes it serialisable
 
 
 ### Actual serial Execution
@@ -203,37 +216,3 @@ May seem obvious, but only been > 2000s that this has been do-able, given that w
 - Implemented in VoltDb, H-Store, Redis, Datomic. 
 
 #### Encapsulating transactions in Stored Procedures
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

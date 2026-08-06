@@ -216,3 +216,18 @@ May seem obvious, but only been > 2000s that this has been do-able, given that w
 - Implemented in VoltDb, H-Store, Redis, Datomic. 
 
 #### Encapsulating transactions in Stored Procedures
+
+### Sharding
+
+Executing all transactions serially makes concurrency control much simpler, but it limits the transaction thoroughput of the database to the speed of a single CPU core on a single machine
+
+#### Summary of Serial Execution
+
+Serial execution of transactions has become viable due to recent computing. Has certain constraints:
+
+- Every tranasction must be small and fast, because it only takes 1 slow transaction to stall all transaction processesing.
+- Most appropriate when the active dataset can fit in memory. 
+- Write throughput must be low enough to be handled on a single CPU core, or else transactions need to be sharded without requiring cross-shard co-ordination.
+- Cross-shared transactions are possible, but their throughput is hard to scale. 
+
+### 2PL

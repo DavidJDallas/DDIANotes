@@ -134,27 +134,50 @@ Write skews. Generalised version of Lost Updates, and can't straightforwardly be
 Similarly, write skews also can involved phantoms - a whole class of caused race conditions which again can't straightfowardly be prevented without introducing serialisability. 
 
 The best known race condition that involves concurrently writing transactions is called a 'lost update'. It's a read-modify-write problem.
-It's not seen as damning, because it's both more easily preventable, and SSI automatically prevents it. 
 
-Below are common solutions to Lost Updates.
+#### Lost Update
 
-#### Atomic Write Operations
+Take two transactions T1 and T2. Both handle the shared state of user1's balance.
 
-- Instead of doing a read-modify-write, you just do a write directly. E.g. in SQL, UPDATE syntax. 
+![](./LostUpdate.png)
+
+(1) T1 reads from the database - user1's balance is 7000. 
+(2) T2 reads from the database - user1's balance is 7000. 
+(3) T1 updates their value to the database - user1's balance is 7,400. 
+(4) T2 updates their value to the database - user1's balance is 7,600.
+
+But we now finish this process with an incorrect balance for user1. It should be 8,000, instead it's 7,600. The first update has been lost.
+
+No individual step is wrong. Yet clearly something has gone wrong. *The problem only exists at the level of the schedule*; it only exists when taking all the steps together as a whole. And it's not correct because the observable outcomes of running these transactions is not the same as if we ran them serially, i.e. ran them one after the other.
+
+- The thing about each step is that none of this is wrong, when we take it step-by-step. It's only wrong when we take it as a whole, i.e. we take all these steps as a schedule and look at its observable behaviour.
+- It's not 'correct', because the observable outcomes of running these transactions is not the same as if we ran them one after the other.
+
+- It's not seen as damning, because it's both more easily preventable, and SSI automatically prevents it. 
+
+
+
+##### Atomic Write Operations
+
+- The bit that does the damage for LUs is the gap between the read and the write. In this gap, another Transaction can commit to the db and make the value you read from stale. So, writing directly removes this gap, and solves the issue. 
+
+- Instead of doing a read-modify-write, you just do a write directly. E.g. UPDATE syntax, no reads.
 
 - ORM frameworks can make it easy to accidentally write code that perform unsafe read-modify-write cycles. 
 
-#### Explicit locking
+ORMs often require this - or at least make it the more straightforward option. You need to first bring the data into memory, then you update the data in memory, and then write back to the database. I know some ORMs do have options to do straight writes (UPDATEs), but often more of a niche feature. 
+
+##### Explicit locking
 
 - use the application to explicitly lock objects that are going to be updated. 
 
 - Carries risks of (i) you can always forgot to implement this if its your policy, (ii) is a blocking operation and can cause deadlocks. 
 
-#### Automatically Detecting Lost Updates
+##### Automatically Detecting Lost Updates
 
 Alternatively, we can allow them to happen in parallel, and let the db do the work. Lots of databases at the Snapshot Isolation level detect for this automatically. 
 
-#### Conditional writes
+##### Conditional writes
 
 Some databases allow for conditional writes - an operation that prevents lost updates by allowing an update to happen only if the value has not changed since you last read it.
 
@@ -178,7 +201,7 @@ A more subtle class of race conditions between concurrent writes. And nastier th
 
 - Can think of write-skew as a generalisation of the Lost-Update problem. 
 
-- Occurs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the same object, you get a dirty write or lost update anomaly, depending on the timing. 
+- Occurs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the *same* object, you get a dirty write or lost update anomaly, depending on the timing. 
 
 - With preventing write skew, the ways to prevent it are more limited vs LUs. Atomic single-object operations don't help, as multiple objects are involved. 
 
@@ -201,7 +224,6 @@ You can materialise conflcits, but serialisability is far preferrable.
 ## serialisability
 
 
-
 3 different ways to do serialisability:
 
 - Literally execute transactions one after the other
@@ -216,6 +238,8 @@ May seem obvious, but only been > 2000s that this has been do-able, given that w
 - Implemented in VoltDb, H-Store, Redis, Datomic. 
 
 #### Encapsulating transactions in Stored Procedures
+
+Solves the problem of back-and-forth over a network - you just have all the stuff you need on the db side, and run it via the SP. 
 
 ### Sharding
 

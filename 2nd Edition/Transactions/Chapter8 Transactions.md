@@ -125,15 +125,16 @@ So, we can say that MVCC is an implementation technique to achieve snapshot isol
 
 ### Preventing Lost Updates
 
+![](./taxonomy.png)
+
 This next section follows the general core: Snapshot Isolation is quite good, and prevents certain race conditions. And does so in a more efficient way than traditional approaches of taking out locks. It also - as we see - laid the foundations of serialisable snapshot isolation that was published in 2008, which most modern serialisability is built upon. 
 
 But it nonetheless leaves the developer using it open to various race conditions. 
 
-Lost Updates. Bad, but preventable.
-Write skews. Generalised version of Lost Updates, and can't straightforwardly be prevented without serialisability.
-Similarly, write skews also can involved phantoms - a whole class of caused race conditions which again can't straightfowardly be prevented without introducing serialisability. 
+- Lost Updates. Bad, but preventable relevaitly fine nowadays.
+- Write skews. Worse, but can be prevented.
+- Phantoms, particularly write skews that involve phantoms. Worse still, and even harder to prevent without serialasbility. 
 
-The best known race condition that involves concurrently writing transactions is called a 'lost update'. It's a read-modify-write problem.
 
 #### Lost Update
 
@@ -146,15 +147,15 @@ Take two transactions T1 and T2. Both handle the shared state of user1's balance
 (3) T1 updates their value to the database - user1's balance is 7,400. 
 (4) T2 updates their value to the database - user1's balance is 7,600.
 
+
 But we now finish this process with an incorrect balance for user1. It should be 8,000, instead it's 7,600. The first update has been lost.
 
 No individual step is wrong. Yet clearly something has gone wrong. *The problem only exists at the level of the schedule*; it only exists when taking all the steps together as a whole. And it's not correct because the observable outcomes of running these transactions is not the same as if we ran them serially, i.e. ran them one after the other.
 
-- The thing about each step is that none of this is wrong, when we take it step-by-step. It's only wrong when we take it as a whole, i.e. we take all these steps as a schedule and look at its observable behaviour.
-- It's not 'correct', because the observable outcomes of running these transactions is not the same as if we ran them one after the other.
+
+A bit more formally: ≥ 2 transactions each (a) read object S and (b) write S, where the value written is derived from the value read, and at least one transaction's write lands between another's read and that other's write.
 
 - It's not seen as damning, because it's both more easily preventable, and SSI automatically prevents it. 
-
 
 
 ##### Atomic Write Operations
@@ -195,13 +196,15 @@ Instead, a common approach is to allow concurrent writes to create several confl
 
 ### Write Skews and Phantoms
 
-A more subtle class of race conditions between concurrent writes. And nastier than LUs because not straightforward to fix.
+A more subtle class of race conditions between concurrent writes. And nastier than LUs because not straightforward to fix. 
+
+We can think of Write Skews as a generalisation of the Lost-Update problem. 
+
+Whereas LUs require >=2 Transactions to (a) read the same state, (b) update the same state that they read from, Write Skews hold (a) but inverts (b) as a condition, and also add a third condition - (c) - that the two differing writes, taken together, violate some invariant that would not have been violated had the transactions run serially.
+
+- write skews are particularly difficult because they violate these invariants which can't simply be blocked by things like atomic writes. The atomic write would have an invariant in it which is still violated because it depends on data that is rendered stale by an incoming write from another Transaction in your set of Ts. 
 
 - Doctor on-call example is an example of 'Write Skew'. Not a dirty write, not a Lost Update. 
-
-- Can think of write-skew as a generalisation of the Lost-Update problem. 
-
-- Occurs if 2 transactions read the same objects and then update some of those objects (different transactions may update different objects). In the special case of different transactions updating the *same* object, you get a dirty write or lost update anomaly, depending on the timing. 
 
 - With preventing write skew, the ways to prevent it are more limited vs LUs. Atomic single-object operations don't help, as multiple objects are involved. 
 
@@ -212,6 +215,7 @@ A more subtle class of race conditions between concurrent writes. And nastier th
 
 #### Phantoms causing write Skews
 
+Phantoms are tougher - they are wr
 
 A phantom is a phenomenon where whilst you are reading from a specific range in your database that matches a certain criteria, the specific range is mutated (updated/deleted/inserted to) which will not have been taken into account when you have initially made the read that determines what items need to be updated. The data you have read and will go on to make decisions informed by, has now changed.
 

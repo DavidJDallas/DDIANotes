@@ -240,3 +240,28 @@ Serial execution of transactions has become viable due to recent computing. Has 
 - Cross-shard transactions are possible, but their throughput is hard to scale.
 
 ### Two-Phase Locking (2PL)
+
+2PL was the only algorithm used for serialisability in databases for around 30 years. 
+
+Readers block writers, but not readers. Writers block both readers and writers. 
+
+#### Implementation of 2PL
+
+Implemented by having a lock on each object on the database. Lock can be either shared mode or exclusive mode. Then:
+
+![](./lock-flow.png)
+
+#### Performance
+
+Bad, because you basically stop transactions running concurrently if they touch the same object. Step better than running them serially, but still quite slow. 
+
+#### Predicate Locks
+
+You can't just take out locks on individual objects and prevent serialisability. This will not prevent phantoms. To solve this, we need a predicate lock. 
+
+Importantly, a predicate lock applies even to object that don't yet exist in the database, but that might be added in the future.
+
+#### Index-range locks
+
+Naturally, predicate locks don't perform well. Consequently, most databases using 2PL implement index-range locking (sometimes known as next-key locking). This is a simplified approximation of predicate locking. 
+

@@ -280,3 +280,15 @@ If index-range locks are implemented, and there's no suitable index, it fails ba
 
 ### Serialisable Snapshot Isolation
 
+Provides full serialisability with only a small performance penalty compare to snapshot isolation. 
+First described in 2008.
+
+Optimistic Concurrency Control technique, in contrast to the pessimistic techniques we've seen above. 
+
+Concurrent operations are allowed on potentially dangerous scenarios, and then when the T wants to commit, the db checks whether anything bad happened (i.e. whether isolation was violated). If so, abort and retry. 
+
+- performs badly if there's high contention (many transactions trying to access the same objects. 'If the system is already close to its maximum throughput, the additional transaction load from the retried transactions can make performance worse'.
+
+'However, if there is enough spare capacity, and if contention between transactions is not too high, optimistic concurrency control techniques tend to perform better than pessimistic ones'. 
+
+- On top of SI, SSI adds an algorithm for detecing serialisation conflicts among reads and writes and determining which transactions to abort. 

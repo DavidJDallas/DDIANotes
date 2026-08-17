@@ -265,3 +265,18 @@ Importantly, a predicate lock applies even to object that don't yet exist in the
 
 Naturally, predicate locks don't perform well. Consequently, most databases using 2PL implement index-range locking (sometimes known as next-key locking). This is a simplified approximation of predicate locking. 
 
+We try and find an index that is either equal to or greater than the predicate range - it must at least contain all of it. Then we lock this index
+
+Pros
+
+- Faster, because we're locking something that already exists. We don't need a new subsystem to take out the lock, we utilise existing ones.
+- You're also already doing an index traversal, so this just piggy-backs on work you're already doing, doesn't require new work like the predicate lock.
+
+Cons
+
+- You can get false positives: since the lock is on a superset of the predicate, it's very possible that it will block other readers/writers from things that don't actually need to be blocking.
+
+If index-range locks are implemented, and there's no suitable index, it fails back to whole-table locks. 
+
+### Serialisable Snapshot Isolation
+

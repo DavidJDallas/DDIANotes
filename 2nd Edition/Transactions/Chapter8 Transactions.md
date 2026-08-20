@@ -241,7 +241,7 @@ Serial execution of transactions has become viable due to recent computing. Has 
 
 ### Two-Phase Locking (2PL)
 
-2PL was the only algorithm used for serialisability in databases for around 30 years. 
+2PL was the only algorithm used for serialisability in databases for around 30 years. First formalised and defined properly in 'The Notions of Consistency and Predicate Locks in a Database System' (1976), but seems to be used before.
 
 Readers block writers, but not readers. Writers block both readers and writers. 
 
@@ -251,9 +251,12 @@ Implemented by having a lock on each object on the database. Lock can be either 
 
 ![](./lock-flow.png)
 
+If a lock is taken and a T tries to access a locked object, they typically wait, not abort. Deadlocks occur when all Ts involved are waiting on other Ts and nobody can proceed; system picks a victim. More frequent when high contention.
+
 #### Performance
 
-Bad, because you basically stop transactions running concurrently if they touch the same object. Step better than running them serially, but still quite slow. 
+Generally bad, because you basically stop transactions running concurrently if they touch the same object. Step better than running them serially, but still quite slow. 
+However, as will be seen, can be comparable to an OCC algorithm if lots of contentions.
 
 #### Predicate Locks
 
@@ -280,15 +283,36 @@ If index-range locks are implemented, and there's no suitable index, it fails ba
 
 ### Serialisable Snapshot Isolation
 
+Frames SSI as something of a saving grace for serialisability and also for concurrency control in databases more generally. 
+
 Provides full serialisability with only a small performance penalty compare to snapshot isolation. 
 First described in 2008.
 
 Optimistic Concurrency Control technique, in contrast to the pessimistic techniques we've seen above. 
 
-Concurrent operations are allowed on potentially dangerous scenarios, and then when the T wants to commit, the db checks whether anything bad happened (i.e. whether isolation was violated). If so, abort and retry. 
+#### Optimistic vs Pessimistic Concurrency Control
 
-- performs badly if there's high contention (many transactions trying to access the same objects. 'If the system is already close to its maximum throughput, the additional transaction load from the retried transactions can make performance worse'.
+Optimistic: Assume everything will be fine, let things proceed, and then check at the end if conflicts have happened. If they have, abort.
+Pessimistic: Assume that if there's any overlap, this will be bad, and so don't let it happen in the first place. Block via a lock.
 
-'However, if there is enough spare capacity, and if contention between transactions is not too high, optimistic concurrency control techniques tend to perform better than pessimistic ones'. 
+Concurrent operations are allowed on potentially dangerous scenarios, and then when the T wants to commit, the db checks whether anything bad happened (i.e. whether isolation was violated). If so, the db will abort.
 
-- On top of SI, SSI adds an algorithm for detecing serialisation conflicts among reads and writes and determining which transactions to abort. 
+It's optimistic concurrency control more broadly that performs badly if high contention. Not specific to SSI. But tends to perform better than pessimistic if contention is not too high.
+
+This is broadly because OCC contentions are more costly than PCC contentions: an OCC contention involves the storage engine effectively doing the processesing of N number of Transactions, and then at commit time, aborting N-1 of them. A PCC contention just makes all Ts wait, if problematic (will also abort under certain conditions). So OCC pays in more CPU, I/O; PCC pays mainly in time waiting (still doing some work, like lock manager mechanisms).
+
+Importantly, for practical purposes, PCC will usually be faster in these circumstances. Say we have N number of Transactions, all contending. Then, PCC will be T x N.
+OCC is, best case scenario, T x N. But can be N(N+1)/2
+
+OCC can easily take many times longer, since each one will have to be retried by the application. If the application enables an automatic retry, then this contention-and-abort cycle could go on for a while.
+
+This is exemplified greater when Transactions are longer running - we exert a lot of work on the system only for it to then be aborted. So all of the above is multiplied in effects. With the above example, we can easily imagine wasting huge amounts of resources on abort-retry cycles. 
+
+
+
+#### What is SSI
+
+- Based on snapshot isolation algorithm, but adds on top of it an algorithm for detecting serialisation conflicts among reads and writes and determining which transactions to abort. 
+- I.e., all reads within a transaction are made from a consistent snapshot of the database.
+
+#### How does it Work?

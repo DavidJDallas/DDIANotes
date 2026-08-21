@@ -315,4 +315,41 @@ This is exemplified greater when Transactions are longer running - we exert a lo
 - Based on snapshot isolation algorithm, but adds on top of it an algorithm for detecting serialisation conflicts among reads and writes and determining which transactions to abort. 
 - I.e., all reads within a transaction are made from a consistent snapshot of the database.
 
+There are a whole class of race condition, as we've seen, that read from the db, make a change based on that read, then write. By the time they have written, the database state has changed in such a way that renders the new write problematic. (Lost update, Write skew). LUs are successfully prevent by regular SI algorithm - this is because ....
+
+But Write Skews could not be solved this way. (why not?). 
+
 #### How does it Work?
+
+We saw above that 2PL is solved by taking out locks in a strategic way. Intuitively quite straightforward as a solution. 
+
+For SSI, the way it's set out here is: to avoid write skews and also phantoms as a class of race conditions 
+
+Two cases set out regarding how to avoid: 
+- Detecting reads of a stale MVCC object version (uncommitted write ocured before the read)
+- Detecting writes that affect prior reads (the write occurs after the read)
+
+MVCC: when a transaction reads from a consistent snapshot in an MVCC db, it ignores the writes that were made by any other transactions that hadn't yet committed at the time the snapshot was taken. 
+
+###### Detecting reads of a stale MVCC object
+
+- Db tracks when a transction ignores another transaction's write because of MVCC visibility rules. When the T wants to commit, the db checks whether any of the ignored writes have now been committed. If so, abort.
+- We need to wait until committing because if the T was read-only 
+
+##### Detecting writes that affect prior reads
+
+Here, we consider another transaction modifying data after it has been read. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

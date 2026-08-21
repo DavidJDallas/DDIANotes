@@ -283,8 +283,6 @@ If index-range locks are implemented, and there's no suitable index, it fails ba
 
 ### Serialisable Snapshot Isolation
 
-Frames SSI as something of a saving grace for serialisability and also for concurrency control in databases more generally. 
-
 Provides full serialisability with only a small performance penalty compare to snapshot isolation. 
 First described in 2008.
 
@@ -292,22 +290,24 @@ Optimistic Concurrency Control technique, in contrast to the pessimistic techniq
 
 #### Optimistic vs Pessimistic Concurrency Control
 
-Optimistic: Assume everything will be fine, let things proceed, and then check at the end if conflicts have happened. If they have, abort.
-Pessimistic: Assume that if there's any overlap, this will be bad, and so don't let it happen in the first place. Block via a lock.
+- Optimistic: Assume everything will be fine, let things proceed, and then check at the end if conflicts have happened. If they have, abort.
+- Pessimistic: Assume that if there's any overlap, this will be bad, and so don't let it happen in the first place. Block via a lock.
 
 Concurrent operations are allowed on potentially dangerous scenarios, and then when the T wants to commit, the db checks whether anything bad happened (i.e. whether isolation was violated). If so, the db will abort.
 
-It's optimistic concurrency control more broadly that performs badly if high contention. Not specific to SSI. But tends to perform better than pessimistic if contention is not too high.
+Optimistic concurrency control more broadly that performs badly if high contention. Not specific to SSI. But tends to perform better than pessimistic if contention is not too high.
 
-This is broadly because OCC contentions are more costly than PCC contentions: an OCC contention involves the storage engine effectively doing the processesing of N number of Transactions, and then at commit time, aborting N-1 of them. A PCC contention just makes all Ts wait, if problematic (will also abort under certain conditions). So OCC pays in more CPU, I/O; PCC pays mainly in time waiting (still doing some work, like lock manager mechanisms).
+*Why?*
 
-Importantly, for practical purposes, PCC will usually be faster in these circumstances. Say we have N number of Transactions, all contending. Then, PCC will be T x N.
-OCC is, best case scenario, T x N. But can be N(N+1)/2
+- OCC contentions are more costly than PCC contentions: 
+- an OCC contention involves the storage engine effectively doing the processesing of N number of Transactions, and then at commit time, aborting N-1 of them (worst case scenario). A PCC contention just makes all Ts wait, if problematic (will also abort under certain conditions). So OCC pays in more CPU, I/O; PCC pays mainly in time waiting (still doing some work, like lock manager mechanisms).
 
-OCC can easily take many times longer, since each one will have to be retried by the application. If the application enables an automatic retry, then this contention-and-abort cycle could go on for a while.
+- Importantly, for practical purposes, PCC will usually be faster in these circumstances. Say we have N number of Transactions, all contending. Then, PCC will be T x N.
+OCC is, best case scenario, T x N, more likely T x N(N-(something))
 
-This is exemplified greater when Transactions are longer running - we exert a lot of work on the system only for it to then be aborted. So all of the above is multiplied in effects. With the above example, we can easily imagine wasting huge amounts of resources on abort-retry cycles. 
+- OCC can easily take many times longer, since each one will have to be retried by the application. If the application enables an automatic retry, then this contention-and-abort cycle could go on for a while.
 
+- This is exemplified greater when Transactions are longer running - we exert a lot of work on the system only for it to then be aborted. So all of the above is multiplied in effects. With the above example, we can easily imagine wasting huge amounts of resources on abort-retry cycles. 
 
 
 #### What is SSI
@@ -315,15 +315,13 @@ This is exemplified greater when Transactions are longer running - we exert a lo
 - Based on snapshot isolation algorithm, but adds on top of it an algorithm for detecting serialisation conflicts among reads and writes and determining which transactions to abort. 
 - I.e., all reads within a transaction are made from a consistent snapshot of the database.
 
-There are a whole class of race condition, as we've seen, that read from the db, make a change based on that read, then write. By the time they have written, the database state has changed in such a way that renders the new write problematic. (Lost update, Write skew). LUs are successfully prevent by regular SI algorithm - this is because ....
+- High-level idea is that we let N number of transactions run concurrently with one another, keep records of everything that they touch, and then if they violate certain constraints which could *potentially* cause a race condition, you abort at least 1 of them. 
 
-But Write Skews could not be solved this way. (why not?). 
 
 #### How does it Work?
 
-We saw above that 2PL is solved by taking out locks in a strategic way. Intuitively quite straightforward as a solution. 
+We saw above that 2PL is solved by taking out locks in a strategic way. Intuitively quite straightforward as a solution. SSI is more permissive, but still allows for false positives and will never be a 1-1 mapping between times aborted and race-conditions prevented. 
 
-For SSI, the way it's set out here is: to avoid write skews and also phantoms as a class of race conditions 
 
 Two cases set out regarding how to avoid: 
 - Detecting reads of a stale MVCC object version (uncommitted write ocured before the read)
@@ -331,14 +329,17 @@ Two cases set out regarding how to avoid:
 
 MVCC: when a transaction reads from a consistent snapshot in an MVCC db, it ignores the writes that were made by any other transactions that hadn't yet committed at the time the snapshot was taken. 
 
+- w-w is first write wins. This it just inherits from SI, nothing new to SSI. The new stuff is how it handles the r-w race conditions. 
+
 ###### Detecting reads of a stale MVCC object
 
 - Db tracks when a transction ignores another transaction's write because of MVCC visibility rules. When the T wants to commit, the db checks whether any of the ignored writes have now been committed. If so, abort.
-- We need to wait until committing because if the T was read-only 
+- We need to wait until committing because if the T was read-only it would be fine.
 
 ##### Detecting writes that affect prior reads
 
 Here, we consider another transaction modifying data after it has been read. 
+
 
 
 

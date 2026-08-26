@@ -341,9 +341,18 @@ MVCC: when a transaction reads from a consistent snapshot in an MVCC db, it igno
 Here, we consider another transaction modifying data after it has been read. 
 
 
+## Distributed Transactions
+
+If your db uses single-leader replication, the transaction execution happens only on the leader. The followers simply apply the log of writes that were committed by transactions on the leader.
 
 
+Concurrency control for distributed transactions are broadly similar to those for single-node concurrency control. 2PL works on a distributed setting. For SSI there distributed serialisabiliy checkers. 
 
+But achieving atomicity in a distributed transaction is a whole new challenge. The chapter focuses on this. 
+
+In single-node transactions, commitmment crucially depends on the order in which data is duraby written to disk. 
+
+### Two-Phase Commit
 
 
 

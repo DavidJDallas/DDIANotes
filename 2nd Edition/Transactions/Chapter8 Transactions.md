@@ -350,16 +350,46 @@ Concurrency control for distributed transactions are broadly similar to those fo
 
 But achieving atomicity in a distributed transaction is a whole new challenge. The chapter focuses on this. 
 
-In single-node transactions, commitmment crucially depends on the order in which data is duraby written to disk. 
+In single-node transactions, commitmment crucially depends on the order in which data is duraby written to disk. First will be the data, then the committ record. Whether or not the transaction succeeds depends on if the commit record succeeds. 
+
+In a distributed setting, this isn't so straight-forward. When a T wants to commit, it's not sufficient to just send a commit request to all the nodes and independently commit the transaction on each one - the commit could succeed on some nodes and fail on others. 
+
+A better approach is to ensure that the nodes involved in a T either all commit or all abort and to prevent a mixture of the two. To achieve this is known as the atomic commitment problem. 
 
 ### Two-Phase Commit
 
 
+Uses a new component that doesn't normally appear in single-node transactions: a co-ordinator/transaction manager. 
 
+- write data
+- prepare (ask all participants if they are ready to commit)
+- commit
 
+It may seem that this can still lead to problems. For example, the commit and prepare phases can still be lost?
 
+The process is broken down in a bit more detail to set out why this works:
 
+1. When the application wants to begin a distributed transaction, it requests a Tx ID from the co-ordinator. Globally unique.
+2. Application begins a single-node Tx on each of the participants and attaches the globally unique TxId to the single-node Tx. All reads and writes done here. 
+3. When ready to commit,the co-ordinator sends a prepare request to all participants, tagged with global TxId. *If any request fails or times out*, co-ordinator sends an abort request for that TxId to all participants. 
+4. When a participant receives a prepare request, makes sure it can definitely commit the Tx under all circumstances. By replying yes, the node *promises* to commit the Tx without error if requested. It does not yet commit. In other words, it promises that there are no reasons it can't commit.
+5. When co-ordinator receives all responses, makes a definitive decision to commit or abort. It writes that decision to its transaction log on disk so that it knows which way to proceed if there's a crash. This is the *commit point*.
+6. Once the co-ordinator\'s decision has been written to disk - the commit point - commit or abort request is sent to all participants. If *this* request fails or times-out, it must replay indefinitely until it succeeds; there's no going back. It can't now refuse. 
 
+It seems that the key point here is that all the participant agrees to is that there are no *non-transient* reasons that it can't commit. The usual reasons that a Tx may fails of transient problems are discarded, since the participant will jsut keep retrying and therefore achieve eventual consistency. It seems a bit confusing here though, since presumably it's theoretically possible for the nodes to be inconsistent for several minutes or longer and therefore the only guarantee is eventual consistency. 
 
+Therefore 2 points of no returns:
+(a) when a participant votes yes, it promises that it will definitely be able to commit later.
+(b) once the co-ordinator decides, the decision is irrevocable. 
 
+##### Co-ordinator failure
 
+Once we reach the prepare requests stage, it becomes more tricky if the co-ordinator crashes. Before, the participant can safely abort the Tx. After, the participant must wait to hear back from the co-ordinator. The participant must wait. This is called 'in doubt' or 'uncertain'. 
+
+The only way for 2PC to complete is by waiting for the co-ordinator to recover. This is blocking, and can cause problems when it happens indefinitely.
+
+We have a 3PC, which is non-blocking. But trickier.
+
+Says best way to solve the problem above from 2PC is to replace the single-node co-ordinator with a fault-tolerant consensus protocol. Done in chapter 10.
+
+### Distributed Transactions across different systems

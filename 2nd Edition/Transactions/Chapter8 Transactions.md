@@ -393,3 +393,25 @@ We have a 3PC, which is non-blocking. But trickier.
 Says best way to solve the problem above from 2PC is to replace the single-node co-ordinator with a fault-tolerant consensus protocol. Done in chapter 10.
 
 ### Distributed Transactions across different systems
+
+Many cloud services don't implement 2PC because of the operational problems that they bring (performance, promising more than they can guarantee, etc). 
+
+There are 2 types of distributed Txs that are often conflated:
+
+- Database-internal distributed transactions
+
+Some distributed databases (i.e. ones that use replication and sharding in their standard config) support internal Txs across their nodes. 
+
+- Heteregenous distributed transactions. 
+
+Participants are >=2 technologies communicating with each other.
+
+Db internal Txs don't have to be compatible with any other system, so they can use any protocol and apply optimisations specific to that particular technology. Heteregenous are more challenging. 
+
+- Exactly-once semantics.
+
+##### XA Transactions
+
+A standard for implementing 2PC across heteregenous technologies. Introduced in 1991. 
+- Not a network protocol; it's an API for interfacing with a transaction co-ordinator. 
+- Assumes that your application uses a network driver or client library to communicate with the participant databses or messaging services. 

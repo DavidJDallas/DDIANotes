@@ -415,3 +415,28 @@ Db internal Txs don't have to be compatible with any other system, so they can u
 A standard for implementing 2PC across heteregenous technologies. Introduced in 1991. 
 - Not a network protocol; it's an API for interfacing with a transaction co-ordinator. 
 - Assumes that your application uses a network driver or client library to communicate with the participant databses or messaging services. 
+
+##### Holding Locks while in doubt
+
+The problem with the Tx being stuck in doubt is to do with locking. Db Txs usually require row-level exclusive locks on any rows they modify, to prevent dirty writes. Any if you want serialisable isolation using 2PL, it's much worse. 
+The db can't release those locks until the Tx commits or aborts.  This could be a long time. 
+
+##### Recovering from Co-ordinator failure
+
+Whilst in theory if the co-ordinator crashes, it should be able to just re-read from the recovery log, sometimes orphaned transactions do occur. The only way out is for an admin to decide whether to abort or commit. Resolving this requires a lot of manual effort, and it most likely needs to be done under stress and time pressure during a serious production outage. 
+
+Many XA implementations have an emergency escape hatch called heuristic decisions: allowing a participant to unilaterally decide to abort or commit an in-doubt transaction without a definitive decision from the co-ordinator. This would break atomicity.
+
+##### Exactly-once message processesing, revisited
+
+You don't actually need distributed Txs to achieve exactly-once semantics. An alternative approach is as follows:
+
+- Assume every message has a unique Id, and in the db you have a table of message IDs that have been processesed. When you start processesing a message from the broker, you begin a new Tx on the db and check the message ID. If same message Id is already existing, you know that it's been processesed, so ack the message to the broker and drop.
+- If the messageId is *not* in the db, add it to the table. Then process the message. When you finish processesing the message, commit the Tx on the db.
+- Once db Tx successfully commits, ack the message to the broker.
+- Once the message has been successfully acked to the broker, you know that it won't try processesing the same message again, so delete the message ID from the db (in a sep Tx).
+
+Note that this wouldn't, I don't think, work exactly for something like an outbox pattern. In an outbox pattern, you'd have something like:
+
+- Commit data needed for the side-effect to an outbox table, within the same tx that goes to your regular table that also needs persisted data. This guarantees atomocity and consistency across the two sources.
+- The side-effect service will regularly poll the outbox table and take the instructions and info from it. The outbox table is the source of truth. The side-effect service will just retry if it fails, and is safe.

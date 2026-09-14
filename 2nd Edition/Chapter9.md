@@ -41,3 +41,23 @@ Usual way to handle this is a timeout.
 
 ## The Limitations of TCP
 
+Network packets have a max size of generally a few kb. But many applications need to send messages that are > than this. Usually, TCP is used for this. This establishes a connection that breaks large data streams into individual packets and puts them back together again on the receiving side. 
+
+Described as reliable because it:
+- detects and retransmits dropped packets
+- Detects re-ordered packets and puts them back in the correct order.
+- Detects packet corruption by using a simple checksum.
+
+Also figures out how fast it can send data so that it's transferred as quickly as possible, but without overloading the network or the receiving node.
+
+The only way to be sure that a request was successful is to receive a positive response from the application itself. 
+
+Nevertheless, TCP is v useful because it provides a convenient way of sending and receiving messages that are too big to fit in 1 packet. 
+
+## Network Faults in Practice
+
+Whenever any communication happens over a network, it may fail. There's no getting around it. 
+
+The term network partition is often used when one part of the network is cut off from others. 
+
+## Fault Detection

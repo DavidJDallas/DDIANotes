@@ -61,3 +61,39 @@ Whenever any communication happens over a network, it may fail. There's no getti
 The term network partition is often used when one part of the network is cut off from others. 
 
 ## Fault Detection
+
+Many systems need to automatically detect faulty nodes. E.g.:
+
+- Load balancer needs to stop sending requests to a faulty node/dead node.
+- If single-leader replication, need to initiate failover. 
+
+But it's hard to tell whether a node is working or not, due to the above point that the only way to be sure that a request was successful is to receieve a positive response from the application itself. There are however specific circumstances where you may get feedback:
+
+- If you can reach the machine where the node is running, but no process listening (because it crashes), the OS will close or refuse TCP connections by sending an RST or FIN reply.
+- If a node process crashed but the node's OS is still running, a script can notify other nodes about the crash so that another node can quickyl take over. 
+
+352: 'If something has gone wrong, you may get an error response at some level of the stack, but in general you have to assume that you will get no response at all.Since the node could actually be alive, you need to work out a balance between false positives and false negatives. Too short a timeout causes alive nodes to be incorrectly suspected to be dead, and too long a timeout causes unecessary delays waiting for dead nodes. 
+
+### Network Congestion and Queuing
+
+The variability of packet delays on computer network is most often due to queuing.
+
+Sometimes people prefer the UDP protocol, compared to TCP. UDP is faster, and doesn't re-transmit lost packets or perform flow control. Good choice when delayed data is wortless (streaming a call, streaming a show).
+
+Queueing delays have an especially wide range when a system is close to its max capacity. 
+
+- Instead of using constant timeouts, systems can continually measure response times and their variability, and automatically adjust timeouts according to the observed response time distribution. Phi Accrual failure detector is one way of doing this. TCP retransmission timeouts work similarly. 
+
+## Synchronous vs Asychronous Networks
+
+Compare datacentres to the traditional fixed-line telephone network. The latter is extremely reliable, delayed audio frames and dropped calls are very rare. Why can't we do that in computer networks?
+
+Calls establish a circuit, and a fixed amount of bandwidth is allocated for the call along the entire route. Remains in place until the call ends. Each side is guarntee to be able to send exactly 16 bits of audio data for every 250 microscends. 
+
+This is a synchronous network - the space has already been reserved for it and doesn't need to queue. We call this a bounded delay.
+
+TCP packets in their connection opportunistically use whatever network bandwidth is available. You can give TCP a variable sized block of data and it will try to transfer it in the shortest time possible. Etherner and IP are packed-switched protocols, which suffer from queueing and thus *unbounded delays* in the network. 
+
+This is because they are optimised for bursty traffic. Requesting a web page, sending an email, or transferring a file doesn't have any particular bandwidth requirement, we just need it ASAP. If you wanted to transfer a filee over a circuit, you'd need to guess a bandwidth allocation, and if you guess too low or too high it's problematic. 
+
+There have been some attempts to build hybrid networks that support both circuit switching and packet switching. ATM was a competitot to Ethernet in 1980s, but didn't take off. And there are various QoS mechanisms around. But these are not enabled in multi-tenant datacentres and public clouds, or when communicating via the internet. 

@@ -97,3 +97,73 @@ TCP packets in their connection opportunistically use whatever network bandwidth
 This is because they are optimised for bursty traffic. Requesting a web page, sending an email, or transferring a file doesn't have any particular bandwidth requirement, we just need it ASAP. If you wanted to transfer a filee over a circuit, you'd need to guess a bandwidth allocation, and if you guess too low or too high it's problematic. 
 
 There have been some attempts to build hybrid networks that support both circuit switching and packet switching. ATM was a competitot to Ethernet in 1980s, but didn't take off. And there are various QoS mechanisms around. But these are not enabled in multi-tenant datacentres and public clouds, or when communicating via the internet. 
+
+
+## Unreliable Clocks
+
+Applications depend on clocks in various ways. We use clocks in applications to measure both durations (has this request timed out, what's the 99th percentile response time of this service?), and points in time (when does this cache entry expire, what is the timestamp on this error message in the log file?)
+
+In distributed systems, communication is not instantaneous, given the networks. And we don't know how long it will take. We can sync clocks to some degree. One mechanism is the Network Time Protocol (NTP).This adjusts the computer clocks according to a group of servers, which in turn get their time from a more accurate source like a GPS receiver.
+
+### Monotonic vs Time-of-Day clocks
+
+Most computers now have at least a (1) time of day clock, (2) monotonic clock.
+
+#### Time of Day
+
+'Normal' clock behaviour - gives you the time. 
+
+- Usually synced with NTP, which means that a timestamp on one machine means same as another machine. 
+- BUT they have various oddities. Inc jumping about in time. 
+- Can also jump due to start and end of DST.
+
+#### Monotonic
+
+Suitable for measuring a duration.More like a stopwatch.
+
+- On a server with multiple CPU sockets, may be a seperate timer per CPU. May not be synced with other CPUs and dangerous to assume they will be. 
+- Usually fine in a Distributed System to use a monotonic clock for measuring elapsed time, because doesn't assume any syncing between different nodes' clock, and not sensistive to slight inaccuracies.
+
+### Clock syncing and Accuracy
+
+ToD clock sycning is not as reliable as you'd hope. 
+
+- Quartz clock in a typical computer drifts, depending on the temperature of the machine. approx 17 seconds if you re-sync once a day.
+- If a computer clocks drifts too much from an NTP server, may refuse to sync, or be forcibly reset. 
+- If a node is accidentally firewalled from NTP servers, misconfig may go unnoticed for some time. Seems like this does happen.
+- NTP syncing is only as good as the network delay (congested network makes syncing worse)
+- Leap seconds crash many large systems. (Leap seconds retired from 2035)
+
+It is, though, possible to acheive very good clock accurracy if you care about it sufficiently. E.g. The MiFID II European regulation for financial institutions requires all high-frequency trading funds to sync their clocks to within 100 microseconds of UTC. You'd achieve that with special hardware (GPS receivers/atomic clocks), Precision Time Protocol (PTP), careful deployment and monitoring. 
+
+### Relying on Sycned clocks
+
+Robust software needs to be prepared to deal with incorrect clocks. Part of the issue is that they're easy to miss that they're wrong. When a node goes down in a DS, this is obvious, whereas if time is off, silent data corrpution can happen as opposed to a big bang.
+
+If you use software that requires synced clocks between nodes, it needs to be monitored, and ones that drif too far need to be declared dead and induce the standard procedures around dead/faulty nodes.
+
+##### Timestamps for Ordering Events
+
+One example is doing a last-write-wins style situation for writes. 
+
+[To come back to]
+
+##### Clock Readings with a Confidence Interval
+
+Because of uncertainties and delays, it doesn't make sense to think of a clock reading as a point in time. It's more like a range of times, within a confidence interval. E.g. a system may be 95% confident that the time is now between 10.3 and 10.5 seconds. 
+
+Most systems though don't xpose this uncertainty. 
+
+##### Synchronised clocks for global snapshots
+
+MVCC allows read-only transactions to see a snapshot of the db, a consistent state a particular point in time, without locking and interfering with read/write transactions. Requires a monotonically increasing tx Id. Fine for single node computers. But when distributed, this is difficult to generate, because we need to co-ordinate. The txId must reflect causality: If TB reads or overrwrites a value that was previously written by A, then B must have a higher TxId than A. Otherwise the snapshot wouldn't be consistent. 
+
+'With lots of small, rapid transactions, creating transaction IDs in a DS becomes an untenable bottleneck' - why, because the co-rodination becomes harder and trickier?
+
+Timestamps are also tricky, because of reasons discussed. 
+
+Spanner does it like this:
+- Use the clock's confidence interval as reported by the TRueTimeAPI. 
+- If the two CIs don't overlap, i.e. the latest time of the early interval is earlier than the earliest time of the later interval, then one definitely happened after the other. Only if the intervals overlap are we unsure. 
+
+### Process Pauses

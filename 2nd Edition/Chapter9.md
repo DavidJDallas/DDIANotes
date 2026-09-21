@@ -101,14 +101,18 @@ There have been some attempts to build hybrid networks that support both circuit
 
 ## Unreliable Clocks
 
-Applications depend on clocks in various ways. We use clocks in applications to measure both *durations* (has this request timed out, what's the 99th percentile response time of this service?), and *points in time* (when does this cache entry expire, what is the timestamp on this error message in the log file?)
+- Applications depend on clocks in various ways. 
+- Durations: Has this request timed out? What's the 99th percentile response time?
+- Points-in-time: When does this cache entry expire? What is the timestamp on this error message?
 
-In distributed systems, communication is not instantaneous, given the networks. And we don't know how long it will take. We can sync clocks to some degree. One mechanism is the Network Time Protocol (NTP).This adjusts the computer clocks according to a group of servers, which in turn get their time from a more accurate source like a GPS receiver.
+Main takeaway from this section: When we work on Distributed Systems, and use clocks, it's hard to reliably keep these clocks in-sync. 
 
-The central takeaway from this point is: when we're using multiple nodes (i.e. using a DS), and we we use clocks for this, it's extremely hard to reliably keep these clocks in-sync. And this causes a lot of issues. 
-It's possible to do, but requires a lot of work that is often not worth the trade-off. 
+We can do it, to a greater or lesser extent, though. There's a sliding trade-off between the more effort we want to spend on this, vs accepting the inaccurracy and building systems that work-around this. 
 
-### Monotonic vs Time-of-Day clocks
+Most of the chapter is spent accepting that we can't trust clock-syncing, and exploring what this means for a DS. 
+
+
+### Monotonic vs Time-of-Day clocks (Overview of the terms)
 
 Most computers now have at least a (1) time of day clock, (2) monotonic clock.
 
@@ -122,28 +126,40 @@ Most computers now have at least a (1) time of day clock, (2) monotonic clock.
 
 #### Monotonic
 
-Suitable for measuring a duration.More like a stopwatch.
+Suitable for measuring a duration. More like a stopwatch.
 
+Issues:
 - On a server with multiple CPU sockets, may be a seperate timer per CPU. May not be synced with other CPUs and dangerous to assume they will be. 
-- Usually fine in a Distributed System to use a monotonic clock for measuring elapsed time, because doesn't assume any syncing between different nodes' clock, and not sensistive to slight inaccuracies.
+
+But, *usually fine in a DS to use a monotonic clock for measuring elapsed time*. Why? Because doesn't assume any syncing between different nodes' clock, and not sensistive to slight inaccuracies.
 
 ### Clock syncing and Accuracy
 
-ToD clock sycning is not as reliable as you'd hope. 
+*ToD clock sycning is not as reliable as you'd hope.*
 
+Expanding on this:
 - Quartz clock in a typical computer drifts, depending on the temperature of the machine. approx 17 seconds if you re-sync once a day.
 - If a computer clocks drifts too much from an NTP server, may refuse to sync, or be forcibly reset. 
 - If a node is accidentally firewalled from NTP servers, misconfig may go unnoticed for some time. Seems like this does happen.
 - NTP syncing is only as good as the network delay (congested network makes syncing worse)
 - Leap seconds crash many large systems. (Leap seconds retired from 2035)
 
-It is, though, possible to acheive very good clock accurracy if you care about it sufficiently. E.g. The MiFID II European regulation for financial institutions requires all high-frequency trading funds to sync their clocks to within 100 microseconds of UTC. You'd achieve that with special hardware (GPS receivers/atomic clocks), Precision Time Protocol (PTP), careful deployment and monitoring. 
+*BUT*
 
-### Relying on Sycned clocks
+- If we *really* want to do it, we can.
+- E.g. The MiFID II European regulation for financial institutions requires all high-frequency trading funds to sync their clocks to within 100 microseconds of UTC. 
+- You'd achieve that with special hardware (GPS receivers/atomic clocks), Precision Time Protocol (PTP), careful deployment and monitoring. 
 
-Robust software needs to be prepared to deal with incorrect clocks. Part of the issue is that they're easy to miss that they're wrong. When a node goes down in a DS, this is obvious, whereas if time is off, silent data corrpution can happen as opposed to a big bang.
+### Relying on Synced clocks
 
-If you use software that requires synced clocks between nodes, it needs to be monitored, and ones that drif too far need to be declared dead and induce the standard procedures around dead/faulty nodes.
+This sub-section, the rest that follows, assumes that (a) we're not going to do PTP, and that (b) we're going to use ToD clocks.
+
+In short, we need to learn to deal with incorrect ToD clocks. 
+
+- Part of the issue is that they're easy to miss that they're wrong. 
+- Node goes down - obvious. Clock drift - often not obvious until way too late. Silent data corruption, etc.
+
+- If you use software that requires synced clocks between nodes, it needs to be monitored, and declared dead quickly if it drifts too far.
 
 ##### Timestamps for Ordering Events
 

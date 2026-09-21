@@ -233,3 +233,27 @@ But, those reasons for pausing can be eliminated if we try hard enough. There ex
 
 ##### Limiting the GC
 
+## Knowledge, Truth, and Lies
+
+### The Majority Rules
+
+There are situations where a node cannot trust its own judgement of a situation. a DS cannot rely exclusively on a single node, because a node can fail at any time, potentially leaving the system stuck. 
+
+We typically use a quorum to deal with this. Here, decisions require a minimum number of votes from several nodes in order to reduce the dependence on any 1 particular node. 
+
+- Most commonly, the quourum is an absolute majority of > 1/2 the nodes. A majority quorum allows the system to continue working if a minority of nodes are faulty. 
+
+### Distributed Locks and Leases
+
+- Locks and leases in Dss are prone to mis-use and are a common source of bugs.
+- You can uses leases when a system requires there to be only 1 of some thing. E.g.
+
+(1) Only 1 node is allowed to be leader for a db shard, avoiding split-brain. 
+
+(2) Only 1 tx or client is allowed to update a particular resource or object, to prevent it from being corrupted by concurrent writes.
+
+& more.
+
+## Byzantine Faults
+
+- Involves deceitful nodes, not just faulty nodes.

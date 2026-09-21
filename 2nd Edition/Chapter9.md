@@ -101,9 +101,12 @@ There have been some attempts to build hybrid networks that support both circuit
 
 ## Unreliable Clocks
 
-Applications depend on clocks in various ways. We use clocks in applications to measure both durations (has this request timed out, what's the 99th percentile response time of this service?), and points in time (when does this cache entry expire, what is the timestamp on this error message in the log file?)
+Applications depend on clocks in various ways. We use clocks in applications to measure both *durations* (has this request timed out, what's the 99th percentile response time of this service?), and *points in time* (when does this cache entry expire, what is the timestamp on this error message in the log file?)
 
 In distributed systems, communication is not instantaneous, given the networks. And we don't know how long it will take. We can sync clocks to some degree. One mechanism is the Network Time Protocol (NTP).This adjusts the computer clocks according to a group of servers, which in turn get their time from a more accurate source like a GPS receiver.
+
+The central takeaway from this point is: when we're using multiple nodes (i.e. using a DS), and we we use clocks for this, it's extremely hard to reliably keep these clocks in-sync. And this causes a lot of issues. 
+It's possible to do, but requires a lot of work that is often not worth the trade-off. 
 
 ### Monotonic vs Time-of-Day clocks
 
@@ -144,9 +147,13 @@ If you use software that requires synced clocks between nodes, it needs to be mo
 
 ##### Timestamps for Ordering Events
 
-One example is doing a last-write-wins style situation for writes. 
+Where we have two different writes happening, with slightly out-of-sync clocks, then a write that comes after another write can actually be before it, according to the clock, even if it logically preceeds it. 
+A way to resole conflicts is to do Last-write-wins, but this wouldn't work here. 
+- Can be prevented by ensuring that when a value is overwritten, the new value always has a higher timestamp than the overwritten value, even if that timestap is ahead of the writer's clock. BUT this incurs the cost of an additional read.  
 
-[To come back to]
+Even though it might be tempting to resolve conflicts by keeping the most "recent" value and discarding others, it's important to be aware that the definition of "recent" depends on a local time-of-day clock, which could be incorrect. 
+
+- Logical clocks are a safer alternative for ordering events; they measure the relative ordering of events. Contrasted with physical clocks. 
 
 ##### Clock Readings with a Confidence Interval
 
@@ -167,3 +174,30 @@ Spanner does it like this:
 - If the two CIs don't overlap, i.e. the latest time of the early interval is earlier than the earliest time of the later interval, then one definitely happened after the other. Only if the intervals overlap are we unsure. 
 
 ### Process Pauses
+
+This is another example of dangerous clock use in a DS. Imagine a db with a single leader per shard. Only leader is allowed to accept writes. How does a node know that it's still leader (that it hasn't been declared dead by the others) and that it may safely accept writes? Options are :
+
+##### Obtain a lease
+
+Like a lock with a timeout. When a node obtains a lease, it knows that it's the leader for a certain amount of time, until the lease expires. To remain leader, the node must periodically renew the lease before it expires. 
+
+However, it will likely rely on a synced clock. It will need to check expiry times for when the lease expires. If the clocks are out of sync, it'll start to do strange things. You'll also need to do a comparision check for the difference in time remaining. But what if there's a pause in the system here? And this is a legitimate thing to assume.
+
+- Contention among threads accessing a shared resource, such as a lock or queue, can cause threads to spend a lot of time waiting. 
+- When the OS context-switches to another thread or when the hypervisor switches to a different VM (when running in a VM), the currently running thread can be paused at any arbitrary point in the code. 
+
+'When writing multi-threaded code on a single machine, we have fairly good tools for make it thread-safe: mutexes, semaphores, atomic counters, lock-free data structures, blocking queues, and so on. Unfortunately, these tools don't directly translate to distributed systems, because a [DS] has no shared memory - only messages sent over an unreliable network'. 
+
+*A node in a DS must assume that its execution can be paused for a significant length of time at any point, even in the middle of a function.*
+
+##### Providing Response Time Guarantees
+
+But, those reasons for pausing can be eliminated if we try hard enough. There exist real-time systems, systems that control the movements of physical objects like cars, aircraft, etc. Here, the software must respond by a specified deadline, and failure to meet that deadline may cause a failure of the entire system. 
+
+- Real-time is a technical term within Embedded systems Software.
+- Providing real-time guarantees in a system requires support from all levels of the software stack. 
+- Requires a large amount of additional work and severely restricts the range of programming languages, libraries, and tools that can be used. 
+- For most server-side data processesing systems, real-time guarantees are not economical or appropriate. 
+
+##### Limiting the GC
+

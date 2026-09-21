@@ -166,7 +166,9 @@ In short, we need to learn to deal with incorrect ToD clocks.
 Conditions for this problem:
 
 (1) > 1 close-together writes happening to the same key. (Close enough that the gap is smaller than the clock-skew)
+
 (2) The writes are timestamped by different clocks (i.e. accepted on different nodes, or stamped by different clients).
+
 (3) The system decides the order by comparing those timestamps.
 
 - This is a particularly problematic issue for databases with multi-leader (e.g. couch db) and leaderless (e.g. Cassandra) replication, because (3) is the default option/common choice.

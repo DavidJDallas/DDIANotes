@@ -147,9 +147,19 @@ If you use software that requires synced clocks between nodes, it needs to be mo
 
 ##### Timestamps for Ordering Events
 
-Where we have two different writes happening, with slightly out-of-sync clocks, then a write that comes after another write can actually be before it, according to the clock, even if it logically preceeds it. 
+Conditions for this problem:
+
+(1) > 1 close-together writes happening to the same key. (Close enough that the gap is smaller than the clock-skew)
+(2) The writes are timestamped by different clocks (i.e. accepted on different nodes, or stamped by different clients).
+(3) The system decides the order by comparing those timestamps.
+
+- This is a particularly problematic issue for databases with multi-leader (e.g. couch db) and leaderless (e.g. Cassandra) replication, because (3) is the default option/common choice.
+
+- Single-leader replication dbs can still fall into this, but it's rarer. 
+
+Where we have two different writes happening, multiple nodes, with slightly out-of-sync clocks, then a write that comes after another write can actually be before it, according to the clock, even if it logically follows it. 
 A way to resole conflicts is to do Last-write-wins, but this wouldn't work here. 
-- Can be prevented by ensuring that when a value is overwritten, the new value always has a higher timestamp than the overwritten value, even if that timestap is ahead of the writer's clock. BUT this incurs the cost of an additional read.  
+- Can be prevented by ensuring that when a value is overwritten, the new value always has a higher timestamp than the overwritten value, even if that timestap is ahead of the writer's clock. BUT this incurs the cost of an additional read. (According to Claude: this is what CRDB uses to prevent this issue.)
 
 Even though it might be tempting to resolve conflicts by keeping the most "recent" value and discarding others, it's important to be aware that the definition of "recent" depends on a local time-of-day clock, which could be incorrect. 
 

@@ -173,35 +173,39 @@ Conditions for this problem:
 
 - Single-leader replication dbs can still fall into this, but it's rarer. 
 
-Where we have two different writes happening, multiple nodes, with slightly out-of-sync clocks, then a write that comes after another write can actually be before it, according to the clock, even if it logically follows it. 
-A way to resole conflicts is to do Last-write-wins, but this wouldn't work here. 
+**TL;DR**
+
+- Where we have two different writes happening close enough together, multiple nodes, with slightly out-of-sync clocks, then a write that comes after another write can actually be before it, according to the clock, even if it logically follows it. 
+
 - Can be prevented by ensuring that when a value is overwritten, the new value always has a higher timestamp than the overwritten value, even if that timestap is ahead of the writer's clock. BUT this incurs the cost of an additional read. (According to Claude: this is what CRDB uses to prevent this issue.)
 
-Even though it might be tempting to resolve conflicts by keeping the most "recent" value and discarding others, it's important to be aware that the definition of "recent" depends on a local time-of-day clock, which could be incorrect. 
+- Even though it might be tempting to resolve conflicts by keeping the most "recent" value and discarding others, it's important to be aware that the definition of "recent" depends on a local time-of-day clock, which could be incorrect. 
 
-- Logical clocks are a safer alternative for ordering events; they measure the relative ordering of events. Contrasted with physical clocks. 
 
 ##### Clock Readings with a Confidence Interval
 
-Because of uncertainties and delays, it doesn't make sense to think of a clock reading as a point in time. It's more like a range of times, within a confidence interval. E.g. a system may be 95% confident that the time is now between 10.3 and 10.5 seconds. 
+- Because of uncertainties and delays, it doesn't make sense to think of a clock reading as a point in time. It's more like a range of times, within a confidence interval. E.g. a system may be 95% confident that the time is now between 10.3 and 10.5 seconds. 
 
-Most systems though don't xpose this uncertainty. 
+- Presented as a useful way to have a base-line to rely on for your clocks, that (presumably) isn't as complex as implementing PTP (precise-time protocol, above).
+
+- Most systems though don't expose this uncertainty. Google Spanner does, though.
 
 ##### Synchronised clocks for global snapshots
 
-MVCC allows read-only transactions to see a snapshot of the db, a consistent state a particular point in time, without locking and interfering with read/write transactions. Requires a monotonically increasing tx Id. Fine for single node computers. But when distributed, this is difficult to generate, because we need to co-ordinate. The txId must reflect causality: If TB reads or overrwrites a value that was previously written by A, then B must have a higher TxId than A. Otherwise the snapshot wouldn't be consistent. 
+- MVCC allows read-only transactions to see a snapshot of the db, a consistent state a particular point in time, without locking and interfering with read/write transactions. 
+- Requires a monotonically increasing tx Id. Fine for single node computers. 
+- But when distributed, this is difficult to generate, because we need to co-ordinate. The txId must reflect causality: If TB reads or overrwrites a value that was previously written by A, then B must have a higher TxId than A. Otherwise the snapshot wouldn't be consistent. 
 
-'With lots of small, rapid transactions, creating transaction IDs in a DS becomes an untenable bottleneck' - why, because the co-rodination becomes harder and trickier?
 
-Timestamps are also tricky, because of reasons discussed. 
-
-Spanner does it like this:
-- Use the clock's confidence interval as reported by the TRueTimeAPI. 
+**Spanner does it as follows**
+- Use the clock's confidence interval as reported by the TrueTimeAPI. 
 - If the two CIs don't overlap, i.e. the latest time of the early interval is earlier than the earliest time of the later interval, then one definitely happened after the other. Only if the intervals overlap are we unsure. 
 
 ### Process Pauses
 
-This is another example of dangerous clock use in a DS. Imagine a db with a single leader per shard. Only leader is allowed to accept writes. How does a node know that it's still leader (that it hasn't been declared dead by the others) and that it may safely accept writes? Options are :
+- Another example of dangerous clock use in a DS. 
+- Imagine a db with a single leader per shard: only the leader is allowed to accept writes. 
+- How does a node know that it's still leader (that it hasn't been declared dead by the others) and that it may safely accept writes? Options are :
 
 ##### Obtain a lease
 
@@ -212,9 +216,9 @@ However, it will likely rely on a synced clock. It will need to check expiry tim
 - Contention among threads accessing a shared resource, such as a lock or queue, can cause threads to spend a lot of time waiting. 
 - When the OS context-switches to another thread or when the hypervisor switches to a different VM (when running in a VM), the currently running thread can be paused at any arbitrary point in the code. 
 
-'When writing multi-threaded code on a single machine, we have fairly good tools for make it thread-safe: mutexes, semaphores, atomic counters, lock-free data structures, blocking queues, and so on. Unfortunately, these tools don't directly translate to distributed systems, because a [DS] has no shared memory - only messages sent over an unreliable network'. 
+So, in short, a continuation of the central message of we're-only-safe-if-plan-pessimistically: 
 
-*A node in a DS must assume that its execution can be paused for a significant length of time at any point, even in the middle of a function.*
+**A node in a DS must assume that its execution can be paused for a significant length of time at any point, even in the middle of a function.**
 
 ##### Providing Response Time Guarantees
 

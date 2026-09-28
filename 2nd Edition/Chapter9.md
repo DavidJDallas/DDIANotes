@@ -263,7 +263,7 @@ We typically use a quorum to deal with this. Here, decisions require a minimum n
 Sometimes, there exist wekaer forms of lying, like hardware issues, software bugs, and misconfiguration, that cause an invalid message. 
 
 
-#### System Model and Reality
+## System Model and Reality
 
 We have a lot of algorithms written for DSs. In order for these algorithms to be useful, they need to tolerate the various faults we've discussed. 
 
@@ -303,3 +303,28 @@ Assume that nodes may crash at any moment, and perhaps start responding again af
 Nodes may do absolutely anything, including deception. 
 
 For modelling real systems, the partially sycnhronous model with crash-revoery faults is generally the most useufl.
+
+####  Defining the Correctness of an algorithm
+
+We can define correctness by its properties. E.g. for any 2 distinct elements of the output list, the element further to the left is smaller than the element further to the right. 
+
+- This is just a formal way of defining what it means for a list to be sorted - an invariant of a sorted list. 
+
+We can similary write down the properties we want of a distributed algorithm. For example:
+
+- Uniqueness. 
+  No 2 requests for a fencing token return the same value
+
+- Monotonic sequence
+  
+- Availability
+  A node that requests a fencing token and does not crash eventually receives a response. 
+
+
+### Distinguishing between safety and liveness
+
+- If a safety property is violated, we can point to the particular point in time that it was broken (e.g. if the uniqueness property was violated, we can identify the particular operation in which a duplicate fencing token was returned). After a safety property has been violated, the violation can't be undone. The damage is already done.
+- A liveness property works the other way round. It may not hold at a certain point in time (e.g. a node may have sent a request but not yet received a response), but there is always hope that it may be satisfied in the future (namely, by receiving a response).
+
+A safety violation shows up in a finite trace of events. You can't catch it in a log.
+A liveness violation never shows up in a trace. Any finite trace could be extended with the good thing happening,

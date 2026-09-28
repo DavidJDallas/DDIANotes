@@ -257,3 +257,49 @@ We typically use a quorum to deal with this. Here, decisions require a minimum n
 ## Byzantine Faults
 
 - Involves deceitful nodes, not just faulty nodes.
+
+### Weak Forms of Lying
+
+Sometimes, there exist wekaer forms of lying, like hardware issues, software bugs, and misconfiguration, that cause an invalid message. 
+
+
+#### System Model and Reality
+
+We have a lot of algorithms written for DSs. In order for these algorithms to be useful, they need to tolerate the various faults we've discussed. 
+
+We can define a *system model*, which is an abstraction that describes an algorithm's assumption. 3 system models are common.
+
+(1) Synchronous model
+Assume:
+- Bounded network delay
+- Bounded process pauses
+- Bounded clock errors
+
+Not realistic of most practical systems.
+
+(2) Partially synchronous model
+
+Realistic for many systems. 
+
+(3) Asynchronous model
+
+An algorithm can't make any timing assumptions - doesn' even have a clock. It's very restrictive, and only some algorithms can fit this.
+
+We also need to consider node failures:
+(1) Crash-stop faults
+
+An algorithm may assume that a node can fail in only 1 way - namely, by crashing.
+
+(2) Crash-recovery faults
+
+Assume that nodes may crash at any moment, and perhaps start responding again after an unknown time. Nodes are assumed to have stable storage that is preserved across crashes, while in-memory state is lost.
+
+(3) Degraded performance and partial functionality
+
+- Nodes may slow down. Called a limping node, gray failure, or fail-slow. Can be even more difficult to deal with that a cleanly failed node.
+
+(4) Byzantine faults
+
+Nodes may do absolutely anything, including deception. 
+
+For modelling real systems, the partially sycnhronous model with crash-revoery faults is generally the most useufl.

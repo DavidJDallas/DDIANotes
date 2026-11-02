@@ -23,4 +23,16 @@ The idea behind linearisability is this: if you want a replicated database to be
 
 403: 'In a linearisable system, as soon as one client successfully complete a write, all clients reading from the db must be able to see the value just written'. In other words, it's a recency guarantee.
 
+#### What makes a System linearisable?
+
+                                        
+
 Lineralisability vs serialisability: Both seem to mean that things can be arranged in a sequential order. But importantly.
+
+### Relying on Linearisability
+
+Areas that it's important
+
+##### Locking and Leader Election
+
+##### Constraints and Uniqueness guarantees

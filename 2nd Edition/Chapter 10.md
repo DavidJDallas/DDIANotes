@@ -54,3 +54,29 @@ Areas that it's important
 ##### Locking and Leader Election
 
 ##### Constraints and Uniqueness guarantees
+
+
+## Implementing Linearisability
+
+Obviously the simplest way to guarantee linearisability would be just to have a single copy of the data, and all operations on it are atomic. But this would render useless all of the benefits that we would want around replication. Namely:
+
+- Resiliency under failure of nodes
+- Scalability (single-leader for reads, multi-leader and leaderless for reads and writes)
+
+Klepmann walks through each type of replication:
+
+Single-leader
+
+- As long as you perform all writes on the leader, it's likely to be linearisable. *But* this assumes that you know who the leader is. Quite possible for a node that's not the leader to think that it is, and this would likely violate linearisability. 
+
+- Sharding a single-leader db would not affect linearisability. But cross-shard Txs are a different matter.
+- Multi-leader is not linearisable, because they concurrently process writes on multiple nodes and asyncrhonously replicate them to other nodes. So, they can produce writes which require resolution.
+
+- Leaderless replication. Some claim it is, but doesn't seem to be true. Even with quorums, nonlinearisable behaviour is possible.
+
+### Consensus algorithms
+
+Likely linearisable. Some consensus algorithms are essentially single-leader replication with automatic leader election and failover. Carefully designed to prevent split-brain, allowing them to implement linearisable storage safely. 
+
+## The Cost of Linearisability
+

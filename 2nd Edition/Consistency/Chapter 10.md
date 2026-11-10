@@ -58,6 +58,30 @@ Areas that it's important
 
 ## Implementing Linearisability
 
+![](./linearisable-isolation.png)
+
+To recap: Linearisability concerns single operations on single objects. It's a guarantee about the order of things across distributed systems. 
+
+Serialisability concerns > 1 operations on database Transactions. (It would also apply to 1 operation too, but this would be trivial and not really worth mentioning.) It guarantees that for N number of Transactions running concurrently on N number of rows, the database will handle it (ignoring implementation details) as if those Transactions were run one after the other. There is no guarantee in serialisability alone that your Transactions would run in any particular order, or that the first Transaction would go first, etc. 
+
+So: Serialisability does not make guarantees about ordering, or about how your application will read the writes. Linearisability doesn't make any guarantees about how your Transactions will be run, or that Transactions won't interleave.
+
+- Also, I think importantly, when we consider Serialisability and how we define and understand it, it's on one node. You can do Distributed Txs, but that's not what we really think about when we discuss them. It's fundamentally a phenomenon that we discuss and read about on 1 node.
+- Linearisability, on the other hand, is purely a problem that only occurrs over > 1 node. It is trivial to assert that if you only have 1 node that your database runs on, to hold that things written in some order x1,x2,x3 must be read in that order by the application.
+
+The two have an interesting history regarding their overlaps too. 
+
+- There are many different variations of consistency that are weaker than linearisable. This is just the strongest form, and Klepmann deliberately chooses to focus only on this.
+
+### Some Brief History and Setting the Scene
+
+
+- As with most things in field of Distributed Systems, begins with Leslie Lamport
+- Term is first coined in Herlehy and Wing in 1987, but built on in 1990 which becomes the standard citation source.
+
+- Brewer's mentionin of the CAP theorem in a 2000 talk. Later formalised.
+
+
 Obviously the simplest way to guarantee linearisability would be just to have a single copy of the data, and all operations on it are atomic. But this would render useless all of the benefits that we would want around replication. Namely:
 
 - Resiliency under failure of nodes

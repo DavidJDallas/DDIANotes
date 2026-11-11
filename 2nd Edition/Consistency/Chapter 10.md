@@ -87,20 +87,58 @@ Obviously the simplest way to guarantee linearisability would be just to have a 
 - Resiliency under failure of nodes
 - Scalability (single-leader for reads, multi-leader and leaderless for reads and writes)
 
-Klepmann walks through each type of replication:
+Klepmann walks through each type of replication to assess if can be made linearisable:
 
-Single-leader
+#### Single-leader
 
 - As long as you perform all writes on the leader, it's likely to be linearisable. *But* this assumes that you know who the leader is. Quite possible for a node that's not the leader to think that it is, and this would likely violate linearisability. 
 
 - Sharding a single-leader db would not affect linearisability. But cross-shard Txs are a different matter.
-- Multi-leader is not linearisable, because they concurrently process writes on multiple nodes and asyncrhonously replicate them to other nodes. So, they can produce writes which require resolution.
 
-- Leaderless replication. Some claim it is, but doesn't seem to be true. Even with quorums, nonlinearisable behaviour is possible.
+#### Multi-leader 
+
+- Multi-leader is *not linearisable*, because they concurrently process writes on multiple nodes and asyncrhonously replicate them to other nodes. So, they can produce writes which require resolution.
+
+#### Leaderless 
+
+- *Probably* not linearisable.
+
+- Leaderless replication. Some claim it is, but doesn't seem to be true. Even with quorums, nonlinearisable behaviour is possible due to things like network delays. It may be the case, unavoidably, that a write that was submitted by the client earlier in time isn't processed properly until after another write submitted later. 
 
 ### Consensus algorithms
+
+- Consensus algorithms are a service that the above can use in order to achieve consensus amongst the nodes as to determining things like who the leader is, who is in the cluster, or who holds a lock, etc. 
+- But they also use replication themselves, and are therefore can be looked at from this angle.
 
 Likely linearisable. Some consensus algorithms are essentially single-leader replication with automatic leader election and failover. Carefully designed to prevent split-brain, allowing them to implement linearisable storage safely. 
 
 ## The Cost of Linearisability
+
+- Network partitions: The network within each region is working, but the regions can't talk to each other.
+- For single-leader, this will fall over unless the leader is in the same region as all the replicas. 
+- For multi-leader, each region can continue operating normally, assuming that the leaders are split across regions. 
+
+- But more broadly, this failure issue doesn't need specifically a network partition - it will have the same symptoms if you have any sort of network failure. 
+
+Here is the trade-off:
+
+- If you require linearisability, and some replicas get disconnected for network reasons, the replicas will be temporarily unable to process requests. Sometimes know as 'CP' or 'Consistency under network partition'.
+- If you *don't* require linearisability, you can process requests independently, even if disconnected. In this case, the application can remain available under network issues, but its behaviour is not linearisable. Known as AP, 'availability under partition'.
+
+Klepmann is critical of CAP (as formally defined?) because:
+- Considers only 1 consistency model (linearisability)
+- Considers only 1 kind of fault (network partitions, which are quite rare)
+
+There have been efforts to generalise CAP.
+
+
+#### Linearisability and Network Delays
+
+
+- Very few systems are linearisable in practice.
+- Often this is done for performance reasons, not for fault tolerance. 
+- This seems like a hard limit, not just an optimisation problem. E.g. Attiya and Welch prove that if you want linearisability, the response time of read and write requests is at least proportional to the uncertainty of delays in the network. 
+
+
+## Id generators and logical clocks
 

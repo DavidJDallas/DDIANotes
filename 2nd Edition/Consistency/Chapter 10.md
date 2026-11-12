@@ -56,36 +56,45 @@ Areas that it's important
 ##### Constraints and Uniqueness guarantees
 
 
-## Implementing Linearisability
-
-![](./linearisable-isolation.png)
-
 To recap: Linearisability concerns single operations on single objects. It's a guarantee about the order of things across distributed systems. 
 
-Serialisability concerns > 1 operations on database Transactions. (It would also apply to 1 operation too, but this would be trivial and not really worth mentioning.) It guarantees that for N number of Transactions running concurrently on N number of rows, the database will handle it (ignoring implementation details) as if those Transactions were run one after the other. There is no guarantee in serialisability alone that your Transactions would run in any particular order, or that the first Transaction would go first, etc. 
+- Serialisability concerns > 1 operations on database Transactions.
+- Guarantees that for N number of Transactions running concurrently on N number of rows, the database will handle it (ignoring implementation details) as if those Transactions were run one after the other. 
+- There is no guarantee in serialisability alone that your Transactions would run in any particular order, or that the first Transaction would go first, etc. 
 
-So: Serialisability does not make guarantees about ordering, or about how your application will read the writes. Linearisability doesn't make any guarantees about how your Transactions will be run, or that Transactions won't interleave.
+So: Serialisability does not make guarantees about precise ordering between the N number of transactions running concurrently (what will get processed first), or about how your application will read the writes. 
 
-- Also, I think importantly, when we consider Serialisability and how we define and understand it, it's on one node. You can do Distributed Txs, but that's not what we really think about when we discuss them. It's fundamentally a phenomenon that we discuss and read about on 1 node.
-- Linearisability, on the other hand, is purely a problem that only occurrs over > 1 node. It is trivial to assert that if you only have 1 node that your database runs on, to hold that things written in some order x1,x2,x3 must be read in that order by the application.
-
-The two have an interesting history regarding their overlaps too. 
-
-- There are many different variations of consistency that are weaker than linearisable. This is just the strongest form, and Klepmann deliberately chooses to focus only on this.
-
-### Some Brief History and Setting the Scene
+- Linearisability doesn't make any guarantees about how your Transactions will be run, or that Transactions won't interleave and cause race conditions. 
 
 
-- As with most things in field of Distributed Systems, begins with Leslie Lamport
-- Term is first coined in Herlehy and Wing in 1987, but built on in 1990 which becomes the standard citation source.
+- It seems that this murkiness comes from the research around them being done on 2 different communuties: The database community creating their own language, phrasing and concepts, and the Distributed Systems community creating their own language, phrasing, and concepts.
+- The database person cares about what happens in the database, and cares about correctness and performance within this system.
+- The DS person cares about what happens when different nodes fail, and how to preserve correctness in this case.
+- The language they both develop is different. 
 
-- Brewer's mentionin of the CAP theorem in a 2000 talk. Later formalised.
+
+|                         | Databases                                     | Distributed systems                                          |
+|-------------------------|-----------------------------------------------|--------------------------------------------------------------|
+| Unit of work            | Transaction (many operations)                 | Single operation                                             |
+| Failure model           | One machine crashes and recovers from disk    | Partial failure: some nodes or links fail while others continue |
+| What "correct" means    | Invariants are preserved                      | Replicas agree; what observers see is coherent               |
+| Time                    | Some serial order, not necessarily real time  | Real time, or causality                                      |
+| Main cost worried about | Throughput, contention                        | Availability, latency, coordination                          |
+| How guarantees are defined | By the anomalies they forbid (dirty read, write skew) | As properties of histories that must hold (a total order exists...) |
 
 
-Obviously the simplest way to guarantee linearisability would be just to have a single copy of the data, and all operations on it are atomic. But this would render useless all of the benefits that we would want around replication. Namely:
+| Word        | Database meaning                                              | Distributed-systems / concurrency meaning                          |
+|-------------|---------------------------------------------------------------|--------------------------------------------------------------------|
+| Consistency | ACID "C": application invariants hold                         | Replicas agree, reads aren't stale (CAP, consistency models)       |
+| Atomic      | ACID "A": all-or-nothing on failure                           | Indivisible to observers; takes effect at one instant (atomic registers) |
+| Partition   | Sharding: splitting data across nodes                         | Network partition: nodes that can't communicate                    |
+| Serializable | Strongest standard isolation level                           | In etcd: a cheaper, possibly stale read mode                       |
+| Commit      | Transaction is durable and visible                            | Raft: log entry is held by a majority of replicas                  |
+| Snapshot    | Snapshot isolation                                            | Consistent snapshot of global state (Chandy–Lamport)               |
 
-- Resiliency under failure of nodes
-- Scalability (single-leader for reads, multi-leader and leaderless for reads and writes)
+
+
+## Implementing Linearisability
 
 Klepmann walks through each type of replication to assess if can be made linearisable:
 

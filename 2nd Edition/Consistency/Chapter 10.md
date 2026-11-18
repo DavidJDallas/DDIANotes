@@ -93,6 +93,8 @@ So: Serialisability does not make guarantees about precise ordering between the 
 | Snapshot    | Snapshot isolation                                            | Consistent snapshot of global state (Chandy–Lamport)               |
 
 
+For more on this , [Kemme and Alonso](https://www.comp.nus.edu.sg/~vldb2010/proceedings/files/papers/TY02.pdf)
+
 
 ## Implementing Linearisability
 
@@ -151,3 +153,25 @@ There have been efforts to generalise CAP.
 
 ## Id generators and logical clocks
 
+There may be use cases in your application where you want an id generator that auto-increments to show a clear increase and identify each new item in a clear order.
+
+Single node, in-memory generators are easy. But
+- They're not fault-tolerant
+- They're slow if you want to create a record in another region, as you potentially have to make a roundtrip to the other side of the planet just to get an ID.
+- That single node could become a bottleneck if you have high write throughput. 
+
+### Alternatives for Id generators
+
+- Sharded Id assignment
+- Preallocated blocks of Ids
+- Random UUIDs
+- Wall-clock timestamp made unique
+
+All generate Ids that are unique, but they have much weaker ordering guarantees for Ids than the single-node autoincrementing scheme. 
+
+- Wall-clock time can provide at best an approximate ordering. 
+
+Klepmann presents 'logical clocks' as a solution here. 
+### Logical Clocks
+
+These are common in distributed systems. A logical clock 'is an algorithm that counts the events that have occurred'. It won't tell you what time it is, but you can compare timestamps between two events from a logical clock and it will tell you which one is earlier. 

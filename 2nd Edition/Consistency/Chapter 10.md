@@ -175,3 +175,29 @@ Klepmann presents 'logical clocks' as a solution here.
 ### Logical Clocks
 
 These are common in distributed systems. A logical clock 'is an algorithm that counts the events that have occurred'. It won't tell you what time it is, but you can compare timestamps between two events from a logical clock and it will tell you which one is earlier. 
+
+Requirements for a logical clock:
+
+- Timestamps are compact (a few bytes in size) and unique
+- You can compare any 2 timestamps and determine which one is earlier (i.e. totally ordered)
+- The order of timestamps is consistent with causality
+
+#### Lamport Timestamps
+
+
+Lamport clocks don't provide linearisability but do provide a total ordering. So, they are objectively orderded, but may not be subjectively correct i.e up to date, and therefore may look out-of-order for individual clients. 
+
+- Lamport timestamp is simply a pair of (counter, node Id). 2 Nodes may sometimes have the same counter value, but by including the node ID in the timestamp, each timestamp is made unique. 
+
+### Hybrid Logical Clocks
+
+Limitations to LTs.
+
+- No direct relationship to physical time and so you can't use them to find e.g. all messages posted on a particular date.
+- If 2 nodes never communicate, one node's counter increment will never be reflected in the other one's counter. As a result, events generated around the same time on different nodes could have v different counter values.
+
+Hybrid logical clocks combine the advantages of a physical time-of-day clock with the ordering guarantees of Lamport clocks. 
+
+- Counts seconds or microseconds, and when 1 node sees a timestamp from another node that is greater than its clock value, moves its own local value forward to match the other node's timestamp. 
+
+- Every time a timestamp from a hybrid logical clock is generated, it's also incremented, which ensures that the clock moves forward monotonically even if the underlying physical clock jumps backward. 

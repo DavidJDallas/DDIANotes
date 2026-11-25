@@ -200,4 +200,48 @@ Hybrid logical clocks combine the advantages of a physical time-of-day clock wit
 
 - Counts seconds or microseconds, and when 1 node sees a timestamp from another node that is greater than its clock value, moves its own local value forward to match the other node's timestamp. 
 
-- Every time a timestamp from a hybrid logical clock is generated, it's also incremented, which ensures that the clock moves forward monotonically even if the underlying physical clock jumps backward. 
+- Every time a timestamp from a hybrid logical clock is generated, it's also incremented, which ensures that the clock moves forward monotonically even if the underlying physical clock jumps backward.
+
+## Consensus
+
+426: 'The standard formulation of consensus involves getting multiple nodes to agree on a single value.'
+
+### FLP result
+
+From the paper "Impossibility of Distributed Consensus with One Faulty Process". 
+
+- In a fully async system, no deterministic algorithm can guarantee consensus if even 1 process might crash.
+
+Conditions:
+
+- Asynchronous network. (i) Messages must always be eventually delivered, but no requirement on how long they take. (ii) no shared clock. (iii) no limit on how slowly they run.
+- Crash failures. At most one process can stop without warning. No lies or byzantine behaviour, just a crash. 
+- Consensus: Every process starts with a value, and the algorithm must meet three conditions: (i) Agreement amongst nodes (ii) Validity: decided value was one of the starting values, (iii) Termination: every non-fault process eventually decides.
+
+FLP provdes that no deterministic protocol can meet all 3 conditions in every possible execution. 
+
+The basic problem: *You can't tell a crashed process from a slow one*. Wait for a process and it might be dead - you wait forever. Move on without it - may be alive, and holding information that decides the outcome.
+
+
+FLP doesn't say consensus is impossible in practice, or that it usually fails. It says there's no guarantee that it terminates under the worst-case timing.
+
+Remember too that FLP assumes 3 conditions. The real systems, with proper proofs, work around it by dropping one of FLP's assumptions.
+
+- Partial synchrony. Assume the system eventually behaves synchronously. E.g. Paxos and Raft. 
+- Failure detectors: add an oracle thats allowed to be wrong for a while. 
+- Randomisation: Use coin-flips. Termination then happens with probability 1 rather than in every execution.
+
+In an async system with failures, you can guarantee safety, but you have to give up guaranteed liveness. 
+
+### The Many Faces of Consensus
+
+We can express consensus in several ways. E.g.
+
+- Single-value consensus.
+- Constructing an append-only log also requires consensus. Usually formalised as a total order broadcast. With a log you can implement state machine replication, leader-based replication, event sourcing, etc.
+- An atomic fetch-and-add (atomic increment) operation also is equivalent to consensus.
+- Atomic commitment of a multidatabase or multishard Tx is equivalent to consensus, in that it requires all participants agree on whether to commit or abort the Tx.
+
+
+#### Single-Value Consensus
+

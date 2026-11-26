@@ -245,3 +245,15 @@ We can express consensus in several ways. E.g.
 
 #### Single-Value Consensus
 
+Getting all nodes to agree on a single value. 1 or more nodes may propose values, and the consensus algorithm decides on one of those values. 
+So, a consensus algorithm must have the following properties:
+
+- Uniform agreement. No 2 nodes decide differently.
+- Integrity. After a node has decided one value, it cannot change its mind by deciding another value. 
+- Validity: If a node decides value v, then value v was proposed by a node.
+- Termination: Every node that does not crash eventually decides a value. 
+
+Termination is a liveness property, whereas others are a safety property. 
+
+#### Compare and Set as Consensus
+
